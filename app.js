@@ -5,6 +5,7 @@ const mysql = require('mysql2');
 const app = express();
 
 require('dotenv').config();
+app.use(express.json());
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
