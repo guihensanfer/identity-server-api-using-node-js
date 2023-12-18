@@ -1,10 +1,11 @@
-const checkUserExists = async (email) => {
-    try {
-      const procedureName = 'USP_USERS_SELECT_EXISTS';
-      const results = await query(`CALL ${procedureName}('${email}')`);
+const { query } = require("express");
+const { executeProcedure } = require("../db");
 
-      return results;
-    } catch (error) {
-      throw error;
-    }
+const checkUserExists = async (email) => {  
+  const results = await executeProcedure('USP_USERS_SELECT_EXISTS', [{
+    value: email, 
+    type: 'varchar'
+  }]);
+
+  return results;
 };

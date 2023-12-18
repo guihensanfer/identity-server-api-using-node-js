@@ -26,3 +26,18 @@ begin
     from Users
     where email = COALESCE(_email, Email);
 end
+
+go
+
+create procedure USP_TEST()
+begin
+    select 'ITS IS WORKING';
+end
+
+drop procedure USP_TEST2
+create procedure USP_TEST2(in parameter varchar(200))
+begin
+    select concat('ITS IS WORKING ', parameter) as result;
+end
+
+call USP_TEST2('teste');

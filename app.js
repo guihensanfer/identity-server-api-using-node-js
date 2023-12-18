@@ -1,5 +1,5 @@
 require('dotenv').config();
-require('./services/db');
+require('./db');
 
 const express = require('express');
 const bcrypt = require('bcrypt');
@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const authController = require('./controllers/v1/authController');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
+const { executeProcedure } = require('./db');
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -49,3 +50,6 @@ app.listen(3000);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/auth', authController);
 
+// test
+executeProcedure('USP_TEST').then(res => console.log(res));
+executeProcedure('USP_TEST2',[{value:'teste'}]).then(res => console.log(res));
