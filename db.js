@@ -8,6 +8,29 @@ const pool = mysql.createPool({
     connectionLimit: 10,
 });
 
+async function errorLogInsert (errorLogModel){
+  const procedureName = 'USP_ERRORLOG_INSERT';
+  const {
+      errorMessage,
+      errorCode,
+      errorSeverity,
+      errorSource,
+      errorDetails,
+      userID,
+      ipAddress,
+  } = errorLogModel;
+  
+  await db.executeProcedure(procedureName, [
+      errorMessage,
+      errorCode,
+      errorSeverity,
+      errorSource,
+      errorDetails,
+      userID,
+      ipAddress
+  ]).then();
+}
+
 function getParameterType(value) {
     if (typeof value === 'number' && Number.isInteger(value)) {
       return 'int';
@@ -22,9 +45,7 @@ function getParameterType(value) {
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       return 'json';
     }
-    // Adicione mais verificações de tipo conforme necessário (ex: outros tipos de dados)
-  
-    // Se nenhum tipo corresponder, retorna 'default'
+   
     return 'default';
 }
   
@@ -43,53 +64,19 @@ function formatJSON(value) {
       return null;
     }
 }
-// pool.connect((err) => {
-//     if (err) {
-//         console.error('Error connecting to database:', err);
-//         return;
-//     }
-//     console.log('Connected to database');
-// });
 
 module.exports = {
     
-    pool,
-
-    // Example
-    // const procedureName = 'USP_GET_USER_BY_ID';
-    // const params = [{ value: userId, type: 'int' }];
-    // const results = await database.executeProcedure(procedureName, params);
-    // executeProcedure: async (procedureName, params = []) => {
-    //     try {
-    //       const placeholders = params.map(() => '?').join(',');
-    //       const callProcedure = `CALL ${procedureName}(${placeholders})`;
-    
-    //       const formattedParams = params.map(param => {
-    //         if (param.type === 'int') {
-    //           return parseInt(param.value, 10); // Converte para inteiro se for 'int'
-    //         } else if (param.type === 'varchar') {
-    //           // Valida e escapa a string para evitar caracteres especiais
-    //           return mysql.escape(param.value);
-    //         } else {
-    //           return param.value; // Mantém como está para outros tipos
-    //         }
-    //       });
-    
-    //       const results = await query(callProcedure, formattedParams);
-    //       return results;
-    //     } catch (error) {            
-    //       throw error;
-    //     }
-    //   }
+    pool,    
+    errorLogInsert,
 
     executeProcedure: async (procedureName, params = []) => {
         try {
           const placeholders = params.map(() => '?').join(',');
-          const callProcedure = `CALL ${procedureName}(${placeholders})`;
-    console.log(callProcedure);
+          const callProcedure = `CALL ${procedureName}(${placeholders})`;    
           const formattedParams = params.map(param => {
             const paramType = getParameterType(param.value);
-    console.log(paramType);
+    
             if (paramType === 'int') {
               return parseInt(param.value, 10);
             } else if (paramType === 'double') {
@@ -108,12 +95,11 @@ module.exports = {
             return param.value; // Se não corresponder a nenhum tipo, mantém o valor
           });
 
-          console.log('-> ' + callProcedure);
-          console.log('->' + formattedParams);
-
           const results = await pool.promise().query(callProcedure, formattedParams);
           return results;
         } catch (error) {
+
+          await errorLogInsert()
           throw error;
         }
     }

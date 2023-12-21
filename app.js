@@ -51,5 +51,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/auth', authController);
 
 // test
-executeProcedure('USP_TEST').then(res => console.log(res));
-executeProcedure('USP_TEST2',[{value:'teste'}]).then(res => console.log(res));
+executeProcedure('USP_TEST2',[{value:'test'}])
+.then(res => {
+
+    console.log(res[0][0][0].result);
+    console.log(res[0][1][0].result);
+    // var records = res[0];
+
+    // for(var x = 0; x < res.length; x++){
+    //     console.log(records[0][x].result);
+    // }
+})
+.catch(ex => {
+    console.log('exception: ' + ex)
+});
