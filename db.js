@@ -78,7 +78,7 @@ async function executeProcedure(procedureName, params = []){
       } else if (paramType === 'double') {
         return parseFloat(param);
       } else if (paramType === 'varchar') {
-        return mysql.escape(param);
+        return param;
       } else if (paramType === 'datetime') {
         return formatDatetime(param);
       } else if (paramType === 'boolean') {
@@ -105,7 +105,7 @@ async function executeProcedure(procedureName, params = []){
       const errorMessage = error.message; // Extracting the error message
     const errorCode = 0; // Extracting error code (if available)
     const errorSeverity =2; // Assuming a default severity for the example
-    const errorSource = 'Some source'; // Assuming a default error source
+    const errorSource = error.stack; // Assuming a default error source
     const errorDetails = JSON.stringify({
       result:'success',
 

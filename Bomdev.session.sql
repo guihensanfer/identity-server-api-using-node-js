@@ -51,13 +51,14 @@ end
 
 DELIMITER //
 
+drop table if exists ErrorLog
 CREATE TABLE ErrorLog (
     ErrorID INT AUTO_INCREMENT PRIMARY KEY,
     ErrorTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ErrorMessage TEXT,
     ErrorCode INT,
     ErrorSeverity ENUM('LOW', 'MEDIUM', 'HIGH'),
-    ErrorSource VARCHAR(255),
+    ErrorSource LONGTEXT,
     ErrorDetails JSON,
     UserID INT NULL,
     IPAddress VARCHAR(45),
@@ -69,11 +70,12 @@ CREATE TABLE ErrorLog (
     FOREIGN KEY (UserID) REFERENCES Users(UserId)
 );
 
+drop procedure if exists USP_ERRORLOG_INSERT
 CREATE PROCEDURE USP_ERRORLOG_INSERT(
     IN p_ErrorMessage TEXT,
     IN p_ErrorCode INT,
     IN p_ErrorSeverity ENUM('LOW', 'MEDIUM', 'HIGH'),
-    IN p_ErrorSource VARCHAR(255),
+    IN p_ErrorSource LONGTEXT,
     IN p_ErrorDetails JSON,
     IN p_UserID INT,
     IN p_IPAddress VARCHAR(45)
@@ -100,7 +102,4 @@ BEGIN
 
     DELETE FROM ErrorLog WHERE ErrorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END 
-
-
-
 
