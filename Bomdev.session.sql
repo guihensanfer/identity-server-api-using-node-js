@@ -103,3 +103,4 @@ BEGIN
     DELETE FROM ErrorLog WHERE ErrorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END 
 
+select * from ErrorLog
