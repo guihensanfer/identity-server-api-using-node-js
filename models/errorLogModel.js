@@ -18,3 +18,5 @@ class ErrorLogModel {
         this.ipAddress = ipAddress;            
     }    
 }
+
+module.exports = ErrorLogModel;

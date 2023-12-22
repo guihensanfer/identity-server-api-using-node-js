@@ -9,16 +9,21 @@ CREATE TABLE Users (
 );
 
 DELIMITER //
+drop procedure USP_USERS_SELECT
+create procedure USP_USERS_SELECT(in _email varchar(200), IN _currentPage INT, IN _itemsPerPage INT) 
+begin 
 
-create procedure USP_USERS_SELECT(in _email varchar(200)) 
-begin
-    select UserId,
-        FirstName,
-        LastName,
-        Email,
-        Password
-    from Users
-    where email = COALESCE(_email, Email);
+    DECLARE offsetValue INT DEFAULT 0;
+    SET offsetValue = (_currentPage - 1) * _itemsPerPage;
+
+    SELECT UserId,
+           FirstName,
+           LastName,
+           Email,
+           Password
+    FROM Users
+    WHERE Email = IFNULL(_email, Email)
+    LIMIT _itemsPerPage OFFSET offsetValue;
 end
 
 DELIMITER //
@@ -64,13 +69,6 @@ CREATE TABLE ErrorLog (
     FOREIGN KEY (UserID) REFERENCES Users(UserId)
 );
 
-CREATE TRIGGER DeleteOldErrorsTrigger
-AFTER INSERT ON ErrorLog
-FOR EACH ROW
-BEGIN
-    DELETE FROM ErrorLog WHERE ErrorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
-END;
-
 CREATE PROCEDURE USP_ERRORLOG_INSERT(
     IN p_ErrorMessage TEXT,
     IN p_ErrorCode INT,
@@ -99,4 +97,10 @@ BEGIN
         p_UserID,
         p_IPAddress
     );
+
+    DELETE FROM ErrorLog WHERE ErrorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END 
+
+
+
+
