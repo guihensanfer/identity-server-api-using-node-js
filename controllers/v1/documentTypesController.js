@@ -2,19 +2,17 @@ const router = require('express').Router();
 
 /**
  * @swagger
- * /auth/register:
- *   post:
- *     summary: Register an user.
- *     description: Register a Bomdev user.
+ * /documentTypes/get-all:
+ *   get:
+ *     summary: User document types.
+ *     description: Get all user document types.
  *     tags:
- *       - Auth
+ *       - Document Types
  *     responses:
  *       '200':
  *         description: Success.
- *       '400':
- *         description: Bad request, verify your request data.
  */
-router.post('/register', async (req, res) => {
+router.get('/get-all', async (req, res) => {
     var { firstName, lastName, document, email, password, projectId } = req.body;
     
 

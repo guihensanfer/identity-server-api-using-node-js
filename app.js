@@ -1,10 +1,11 @@
 require('dotenv').config();
-require('./db');
 
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const authController = require('./controllers/v1/authController');
+const documentTypesController = require('./controllers/v1/documentTypesController');
+const projectsController = require('./controllers/v1/projectsController');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 const { executeProcedure } = require('./db');
@@ -33,10 +34,21 @@ const swaggerOptions = {
             {
                 'name': 'Auth',
                 'description': 'Authentication'
+            },
+            {
+                'name': 'Document Types',
+                'description': 'User Document Types'
+            },
+            {
+                'name': 'Projects',
+                'description': 'Solution projects'
             }
         ],        
     },
-    apis: ['./controllers/v1/*.js','./controllers/v2/*.js'], // Controllers paths
+    apis: [
+        './controllers/v1/*.js',
+        './controllers/v2/*.js'
+    ], // Controllers paths
 };  
 const swaggerSpec = swaggerJSDoc(swaggerOptions);  
 
@@ -49,6 +61,8 @@ app.listen(3000);
 // v1
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/auth', authController);
+app.use('/api/v1/documentTypes', documentTypesController);
+app.use('/api/v1/projects', projectsController);
 
 // test
 executeProcedure('USP_TEST2',['test'])

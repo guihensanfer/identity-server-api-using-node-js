@@ -1,3 +1,8 @@
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
 function formatDatetime(value) {
     const date = new Date(value);
     if (!isNaN(date.getTime())) {
@@ -35,5 +40,6 @@ function formatJSON(value) {
 module.exports = {
     formatDatetime,
     getParameterType,
-    formatJSON
+    formatJSON,
+    isValidEmail
 }
