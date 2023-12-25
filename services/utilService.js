@@ -1,3 +1,15 @@
+async function sendResponse(res,success, status, message, data = null, errors = null) {
+  return new Promise((resolve, reject) => {
+      const response = { message };
+      response.success = success;
+      response.errors = errors; 
+      response.data = data; 
+                  
+      res.status(status).json(response);
+      resolve();
+  });
+}
+
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -41,5 +53,6 @@ module.exports = {
     formatDatetime,
     getParameterType,
     formatJSON,
-    isValidEmail
+    isValidEmail,
+    sendResponse
 }

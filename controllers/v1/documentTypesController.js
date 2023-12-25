@@ -2,7 +2,7 @@ const router = require('express').Router();
 
 /**
  * @swagger
- * /documentTypes/get-all:
+ * /documenttypes/get-all:
  *   get:
  *     summary: User document types.
  *     description: Get all user document types.
