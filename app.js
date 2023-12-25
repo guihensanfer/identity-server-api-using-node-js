@@ -8,7 +8,7 @@ const documentTypesController = require('./controllers/v1/documentTypesControlle
 const projectsController = require('./controllers/v1/projectsController');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
-const { executeProcedure } = require('./db');
+const db = require('./db');
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -64,18 +64,57 @@ app.use('/api/v1/auth', authController);
 app.use('/api/v1/documentTypes', documentTypesController);
 app.use('/api/v1/projects', projectsController);
 
-// test
-executeProcedure('USP_TEST2',['test'])
-.then(res => {
+// Database
+(async () => {
+    await db.executeProcedure('USP_TEST2',['test'])
+    .then(res => {
 
-    console.log(res[0][0][0].result);
-    console.log(res[0][1][0].result);
-    // var records = res[0];
+        console.log(res[0][0][0].result);
+        console.log(res[0][1][0].result);
+        // var records = res[0];
 
-    // for(var x = 0; x < res.length; x++){
-    //     console.log(records[0][x].result);
-    // }
-})
-.catch(ex => {
-    console.log('exception: ' + ex)
-});
+        // for(var x = 0; x < res.length; x++){
+        //     console.log(records[0][x].result);
+        // }
+    })
+    .catch(ex => {
+        console.log('exception: ' + ex)
+    });
+
+    // Sequelize
+
+    const Projects = require('./repositories/projectsRepository');
+    const DocumentTypes = require('./repositories/documentTypesRepository');
+    const Users = require('./repositories/authRepository');
+
+    await db._sequealize.sync();
+    
+    Projects.findCreateFind({
+        where: {
+            Name: 'Default'
+        },
+        defaults:{
+            Name: 'Default',
+            Description: 'Default'
+        }
+    });
+
+    DocumentTypes.findCreateFind({
+        where: {
+            Name: 'CPF'
+        },
+        defaults:{
+            Name: 'CPF',
+            Description: 'Cadastro de Pessoas Física'
+        }
+    });
+    DocumentTypes.findCreateFind({
+        where: {
+            Name: 'CNPJ'
+        },
+        defaults:{
+            Name: 'CNPJ',
+            Description: 'Cadastro Nacional de Pessoas Jurídicas'
+        }
+    });
+})();

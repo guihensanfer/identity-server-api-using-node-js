@@ -17,7 +17,9 @@ const router = require('express').Router();
 router.post('/register', async (req, res) => {
     var { firstName, lastName, document, email, password, projectId } = req.body;
     
-
+    if(!firstName){
+        
+    }
 
     await res.status(200).json({ msg: "you are welcome2!" });
 });

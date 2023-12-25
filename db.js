@@ -1,6 +1,12 @@
 const mysql = require('mysql2');
 const ErrorLogModel = require('./models/errorLogModel');
 const util = require('./services/utilService');
+const Sequelize = require('sequelize');
+const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  dialect:'mysql',
+  host:process.env.DB_HOST,
+  port:3306
+});
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -83,6 +89,6 @@ module.exports = {
     
     pool,    
     errorLogInsert,
-
-    executeProcedure
+    executeProcedure,
+    _sequealize
 };
