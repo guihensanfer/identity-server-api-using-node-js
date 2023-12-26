@@ -39,7 +39,7 @@ const data = db._sequealize.define('Users', {
   },
   DocumentTypeId: {
       type: Sequelize.INTEGER,
-      allowNull: false,
+      allowNull: true,
   },
   ProjectId: {
       type: Sequelize.INTEGER,

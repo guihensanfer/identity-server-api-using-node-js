@@ -75,6 +75,7 @@ begin
 end
 
 select * from users
+select * from ErrorLog
 -- SET FOREIGN_KEY_CHECKS=0;
 -- drop table Users
 -- drop table projects

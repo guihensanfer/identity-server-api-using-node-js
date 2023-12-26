@@ -15,7 +15,7 @@ const swaggerOptions = {
         info: {
             title: 'Bomdev API',
             version: '1.0.0',
-            description: 'Documentation description',
+            description: '',
         },
         host: 'localhost:3000',
         consumes: [

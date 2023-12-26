@@ -17,6 +17,41 @@ const { v4: uuidv4 } = require('uuid');
  *     description: Register a Bomdev user.
  *     tags:
  *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 maxLength: 100
+ *               lastName:
+ *                 type: string
+ *                 maxLength: 100
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 maxLength: 200
+ *               password:
+ *                 type: string
+ *                 maxLength: 300
+ *               document:
+ *                 type: string
+ *                 maxLength: 50
+ *               documentTypeId:
+ *                 type: integer
+ *               defaultLanguage:
+ *                 type: string
+ *                 example: pt-br
+ *                 maxLength: 50
+ *               projectId:
+ *                 type: integer
+ *             required:
+ *               - FirstName
+ *               - Email
+ *               - ProjectId
  *     responses:
  *       '201':
  *         description: User has been created.
@@ -142,6 +177,11 @@ router.post('/register', async (req, res) => {
       
         return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
     }    
+});
+
+
+router.post('/login', async (req, res) => {    
+
 });
 
 module.exports = router;
