@@ -6,7 +6,8 @@ class ErrorLogModel {
         errorSource,
         errorDetails,
         userID,
-        ipAddress
+        ipAddress,
+        ticket
     ) 
     {
         this.errorMessage = errorMessage;
@@ -15,7 +16,8 @@ class ErrorLogModel {
         this.errorSource = errorSource;
         this.errorDetails = errorDetails;
         this.userID = userID;
-        this.ipAddress = ipAddress;            
+        this.ipAddress = ipAddress;        
+        this.ticket = ticket    
     }    
 }
 

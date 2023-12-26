@@ -26,6 +26,7 @@ async function errorLogInsert (errorLogModel){
       errorDetails,
       userID,
       ipAddress,
+      ticket
   } = errorLogModel;
   
   await executeProcedure(procedureName, [
@@ -35,7 +36,8 @@ async function errorLogInsert (errorLogModel){
       errorSource,
       errorDetails,
       userID,
-      ipAddress
+      ipAddress,
+      ticket
   ]);
 }
 

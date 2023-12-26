@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
 
-const DocumentTypes = db._sequealize.define('DocumentTypes', {
+const data = db._sequealize.define('DocumentTypes', {
     DocumentTypeId:{
         type: Sequelize.INTEGER,
         autoIncrement:true,
@@ -18,4 +18,4 @@ const DocumentTypes = db._sequealize.define('DocumentTypes', {
     }
 });
 
-module.exports = DocumentTypes;
+module.exports = data;

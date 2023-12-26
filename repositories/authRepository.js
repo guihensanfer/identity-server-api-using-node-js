@@ -8,7 +8,7 @@ const MAX_GUID_LENGTH = 40;
 const MAX_DOCUMENT_LENGTH = 50;
 const MAX_LANGUAGE_LENGTH = 50;
 
-const Users = db._sequealize.define('Users', {
+const data = db._sequealize.define('Users', {
   UserId: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
@@ -32,6 +32,7 @@ const Users = db._sequealize.define('Users', {
   Guid: {
       type: Sequelize.STRING(MAX_GUID_LENGTH),
       allowNull: false,
+      defaultValue: Sequelize.literal('UUID()')
   },
   Document: {
       type: Sequelize.STRING(MAX_DOCUMENT_LENGTH),
@@ -51,6 +52,7 @@ const Users = db._sequealize.define('Users', {
   },
   DefaultLanguage: {
       type: Sequelize.STRING(MAX_LANGUAGE_LENGTH),
+      allowNull: true,
   },
 }, {
   indexes: [
@@ -65,23 +67,20 @@ const Users = db._sequealize.define('Users', {
   ],
 });
 
-const checkUserExists = async (email = null) => {  
-  if(!util.isValidEmail(email)){
-    return false;
-  }
-
-  await db.executeProcedure('USP_USERS_SELECT_EXISTS', [{email}])
-  .then(res => {
+const checkUserExists = async (email = null, projectId = null) => {    
+  try
+  {
+    let res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId]);
 
     return res[0][0][0].result > 0;
-
-  });
-
-  return false;
+  }
+  catch{
+    return false;
+  }
 };
 
 module.exports = {
-  Users,
+  data,
   checkUserExists,
   MAX_FIRSTNAME_LENGTH,
   MAX_LASTNAME_LENGTH,
