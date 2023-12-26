@@ -44,11 +44,22 @@ const swaggerOptions = {
                 'description': 'Solution projects'
             }
         ],        
+        components: {
+            securitySchemes: {
+                JWT: {
+                    type: 'apiKey',
+                    in: 'header',
+                    name: 'Authorization',
+                    description: 'Enter JWT token in the format "Bearer {token}"'
+                }                
+            }
+        }
     },
     apis: [
         './controllers/v1/*.js',
         './controllers/v2/*.js'
     ], // Controllers paths
+    
 };  
 const swaggerSpec = swaggerJSDoc(swaggerOptions);  
 

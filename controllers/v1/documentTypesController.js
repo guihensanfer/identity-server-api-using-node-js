@@ -13,9 +13,19 @@ const db = require('../../db');
  *     description: Get all user document types.
  *     tags:
  *       - Document Types
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: The page number for pagination (default 1).
+ *     security:
+ *       - JWT: []
  *     responses:
  *       '200':
  *         description: Success.
+ *       '404':
+ *         description: Page not found.
  */
 router.get('/get-all', util.checkToken, async (req, res) => {            
     const { page } = req.query;
