@@ -140,7 +140,7 @@ router.post('/register', async (req, res) => {
       
         await db.errorLogInsert(errorLog);
       
-        return await util.sendResponse(res,false, 500, 'Try again later, ticket' + ticket, null, [err.message]);
+        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
     }    
 });
 
