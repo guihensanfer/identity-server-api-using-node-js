@@ -79,3 +79,16 @@ select * from ErrorLog
 -- SET FOREIGN_KEY_CHECKS=0;
 -- drop table Users
 -- drop table projects
+
+INSERT INTO projects (    
+    Name,
+    Description,
+    createdAt,
+    updatedAt
+  )
+VALUES (    
+    'REP',
+    'Revenues, Expensives and Provisions',
+    CURRENT_DATE(),
+    CURRENT_DATE()
+  );

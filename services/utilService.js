@@ -1,3 +1,33 @@
+const jwt = require('jsonwebtoken');
+const _ = require('lodash');
+const DEFAULT_PAGE = 1;
+const PAGE_SIZE = 10;
+
+function checkToken(req, res, next){
+  let authHeader = req.headers['authorization'];
+
+  if(_.isNull(authHeader) || _.isEmpty(authHeader)){
+    return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
+  }
+
+  let token = authHeader.split(' ')[1];
+
+  if(!token){
+    return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
+  }
+
+  try{
+    let secret = process.env.SECRET;
+
+    jwt.verify(token, secret);
+
+    next();
+  }
+  catch(err){
+    return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
+  }
+}
+
 async function sendResponse(res,success, status, message, data = null, errors = null) {
   return new Promise((resolve, reject) => {
       const response = { message };
@@ -54,5 +84,8 @@ module.exports = {
     getParameterType,
     formatJSON,
     isValidEmail,
-    sendResponse
+    sendResponse,
+    checkToken,
+    DEFAULT_PAGE,
+    PAGE_SIZE
 }

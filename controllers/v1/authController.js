@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const { v4: uuidv4 } = require('uuid');
+const jwt = require('jsonwebtoken');
 
 /**
  * @swagger
@@ -49,9 +50,9 @@ const { v4: uuidv4 } = require('uuid');
  *               projectId:
  *                 type: integer
  *             required:
- *               - FirstName
- *               - Email
- *               - ProjectId
+ *               - firstName
+ *               - email
+ *               - projectId
  *     responses:
  *       '201':
  *         description: User has been created.
@@ -179,9 +180,148 @@ router.post('/register', async (req, res) => {
     }    
 });
 
-
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Log in.
+ *     description: Log in an user.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 maxLength: 200
+ *               password:
+ *                 type: string
+ *                 maxLength: 300
+ *               projectId:
+ *                 type: integer
+ *             required:
+ *               - email
+ *               - password
+ *               - projectId
+ *     responses:
+ *       '200':
+ *         description: Log in was successfully.
+ *       '400':
+ *         description: Bad request, verify your request data.
+ *       '422':
+ *         description: Unprocessable entity, the provided data is not valid.
+ *       '404':
+ *         description: User not found.
+ *       '401':
+ *         description: Log in unauthorized.
+ *       '500':
+ *         description: Internal Server Error.
+ */
 router.post('/login', async (req, res) => {    
+    var { email, password, projectId } = req.body;        
+    let errors = [];
 
+    try
+    {        
+        // Email
+        if(_.isNull(email) || _.isEmpty(email)){
+            errors.push('Email is required.');
+        }
+        else if(email.length > Auth.MAX_EMAIL_LENGTH){
+            errors.push('Email exceeds the maximum allowed length.');        
+        }
+        else if(!util.isValidEmail(email)){
+            errors.push('Valid email is required.');
+        }    
+
+        // Password
+        if(_.isNull(password) || _.isEmpty(password)){
+            errors.push('Password is required.');
+        }
+        else if(password.length > Auth.MAX_PASSWORD_LENGTH){
+            errors.push('Password exceeds the maximum allowed length.');        
+        }  
+
+        // ProjectId
+        if(!projectId){
+            errors.push('ProjectId is required.');
+        }
+        else{
+            let project = await Projects.findOne({
+                where: {
+                    ProjectId: projectId
+                }
+            });
+
+            if(!project){
+                errors.push('ProjectId is invalid.');
+            }
+        }    
+
+        // ----- Check for errors
+        if(errors && errors.length > 0){
+            return await util.sendResponse(res, false, 422, 'Unprocessable entity, the provided data is not valid', null, errors);
+        }
+    
+        // Check user
+        let user = await Auth.data.findOne({
+            where: {
+                Email: email,
+                ProjectId: projectId
+            }
+        });
+
+        if(!user){
+            return await util.sendResponse(res, false, 404, 'User not found', null, ['User not found']);
+        }
+        else {
+            let checkPassword = await bcrypt.compare(password, user.Password);
+            if(!checkPassword){
+                return await util.sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
+            }            
+        }
+
+        let secret = process.env.SECRET;
+        let token = jwt.sign({
+            
+            id: user.UserId            
+            
+        },
+        secret,
+        {
+            expiresIn: '1h'
+        })
+
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 1);
+
+        return await util.sendResponse(res,true, 200, 'Log in was successfully', {
+            token: token,
+            expiresAt: expiresAt
+        }, null);
+    }
+    catch(err){
+        let ticket = uuidv4();
+        let errorLog = new ErrorLogModel(
+            '/auth/login',
+            0,
+            3,
+            err.message + err.stack,
+            null,
+            null,
+            null,
+            ticket
+          );    
+      
+        await db.errorLogInsert(errorLog);
+      
+        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
+    } 
 });
 
 module.exports = router;
