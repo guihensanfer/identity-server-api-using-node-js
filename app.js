@@ -9,6 +9,7 @@ const projectsController = require('./controllers/v1/projectsController');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 const db = require('./db');
+const util = require('./services/utilService');
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -97,6 +98,8 @@ app.use('/api/v1/projects', projectsController);
     const Projects = require('./repositories/projectsRepository');
     const DocumentTypes = require('./repositories/documentTypesRepository');
     const Users = require('./repositories/authRepository');
+    const Roles = require('./repositories/rolesRepository');
+    const UsersRoles = require('./repositories/usersRolesRepository');
 
     await db._sequealize.sync();
     
@@ -126,6 +129,34 @@ app.use('/api/v1/projects', projectsController);
         defaults:{
             name: 'CNPJ',
             description: 'Cadastro Nacional de Pessoas Jurídicas'
+        }
+    });
+
+    Roles.findCreateFind({
+        where: {
+            name: util.ROLE_ADMINISTRATOR
+        },
+        defaults:{
+            name: util.ROLE_ADMINISTRATOR,
+            description: util.ROLE_ADMINISTRATOR
+        }
+    });
+    Roles.findCreateFind({
+        where: {
+            name: util.ROLE_APPLICATION
+        },
+        defaults:{
+            name: util.ROLE_APPLICATION,
+            description: util.ROLE_APPLICATION
+        }
+    });
+    Roles.findCreateFind({
+        where: {
+            name: util.ROLE_USER
+        },
+        defaults:{
+            name: util.ROLE_USER,
+            description: util.ROLE_USER
         }
     });
 })();

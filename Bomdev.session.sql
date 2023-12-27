@@ -94,4 +94,6 @@ VALUES (
 
 
 
-select * from users
+CREATE TABLE IF NOT EXISTS `UsersRoles` (`usersRolesId` INTEGER NOT NULL auto_increment , `userId` INTEGER NOT NULL, `roleId` VARCHAR(100) NOT NULL, `createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, PRIMARY KEY (`usersRolesId`), FOREIGN KEY (`userId`) REFERENCES `Users` (`userId`), FOREIGN KEY (`roleId`) REFERENCES `Roles` (`roleId`)) 
+
+select roleId from roles

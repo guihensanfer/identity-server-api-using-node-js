@@ -46,7 +46,7 @@ const data = db._sequealize.define('Users', {
       allowNull: false,
       references: {
           model: 'Projects', // Referência ao modelo Projects
-          key: 'ProjectId', // Chave referenciada em Projects
+          key: 'projectId', // Chave referenciada em Projects
       },
       unique: 'UQ_EMAIL_PROJECTID', // Adicionando índice único
   },
@@ -57,11 +57,11 @@ const data = db._sequealize.define('Users', {
 }, {
   indexes: [
       {
-          fields: ['ProjectId'],
+          fields: ['projectId'],
           name: 'IDX_PROJECTID',
       },
       {
-        fields: ['Email'],
+        fields: ['email'],
         name: 'IDX_EMAIL',
       }
   ],
