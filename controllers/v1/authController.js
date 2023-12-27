@@ -122,7 +122,7 @@ router.post('/register', async (req, res) => {
         else{
             let project = await Projects.findOne({
                 where: {
-                    ProjectId: projectId
+                    projectId: projectId
                 }
             });
 
@@ -149,14 +149,14 @@ router.post('/register', async (req, res) => {
 
         // Create user
         await Auth.data.create({
-            FirstName: firstName,
-            LastName: lastName,
-            Email: email,
-            Password: passwordHash,
-            Document: document.documentValue,
-            DocumentTypeId: document.documentTypeId,
-            ProjectId: projectId,
-            DefaultLanguage: language
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            password: passwordHash,
+            document: document.documentValue,
+            documentTypeId: document.documentTypeId,
+            projectId: projectId,
+            defaultLanguage: language
         });
 
         return await util.sendResponse(res,true, 201, 'User has been created');
@@ -254,7 +254,7 @@ router.post('/login', async (req, res) => {
         else{
             let project = await Projects.findOne({
                 where: {
-                    ProjectId: projectId
+                    projectId: projectId
                 }
             });
 
@@ -271,8 +271,8 @@ router.post('/login', async (req, res) => {
         // Check user
         let user = await Auth.data.findOne({
             where: {
-                Email: email,
-                ProjectId: projectId
+                email: email,
+                projectId: projectId
             }
         });
 
@@ -280,7 +280,7 @@ router.post('/login', async (req, res) => {
             return await util.sendResponse(res, false, 404, 'User not found', null, ['User not found']);
         }
         else {
-            let checkPassword = await bcrypt.compare(password, user.Password);
+            let checkPassword = await bcrypt.compare(password, user.password);
             if(!checkPassword){
                 return await util.sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
             }            

@@ -9,59 +9,60 @@ begin
     select concat('ITS IS WORKING 2', parameter) as result;
 end
 
-CREATE TABLE IF NOT EXISTS ErrorLog (
-    ErrorID INT AUTO_INCREMENT PRIMARY KEY,
-    ErrorTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ErrorMessage TEXT,
-    ErrorCode INT,
-    ErrorSeverity ENUM('LOW', 'MEDIUM', 'HIGH'),
-    ErrorSource LONGTEXT,
-    ErrorDetails JSON,
-    UserID INT NULL,
-    IPAddress VARCHAR(45),
-    Ticket varchar(50) null,
+CREATE TABLE IF NOT EXISTS ErrorLogss (
+    errorID INT AUTO_INCREMENT PRIMARY KEY,
+    errorTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    errorMessage TEXT,
+    errorCode INT,
+    errorSeverity ENUM('LOW', 'MEDIUM', 'HIGH'),
+    errorSource LONGTEXT,
+    errorDetails JSON,
+    userID INT NULL,
+    ipAddress VARCHAR(45),
+    ticket varchar(50) null,
     
-    INDEX IDXErrorTime (ErrorTime),
-    INDEX IDXErrorSeverity (ErrorSeverity),
-    INDEX IDXUserID (UserID),   
-    INDEX IDXTicket (Ticket),    
+    INDEX IDXerrorTime (errorTime),
+    INDEX IDXerrorSeverity (errorSeverity),
+    INDEX IDXuserID (userID),   
+    INDEX IDXticket (ticket),    
      
-    FOREIGN KEY (UserID) REFERENCES Users(UserId)
+    FOREIGN KEY (userID) REFERENCES Users(userID)
 );
 
-CREATE PROCEDURE IF NOT EXISTS USP_ERRORLOG_INSERT(
-    IN p_ErrorMessage TEXT,
-    IN p_ErrorCode INT,
-    IN p_ErrorSeverity ENUM('LOW', 'MEDIUM', 'HIGH'),
-    IN p_ErrorSource LONGTEXT,
-    IN p_ErrorDetails JSON,
-    IN p_UserID INT,
-    IN p_IPAddress VARCHAR(45),
+
+CREATE PROCEDURE IF NOT EXISTS USP_ErrorLogs_INSERT(
+    IN p_errorMessage TEXT,
+    IN p_errorCode INT,
+    IN p_errorSeverity ENUM('LOW', 'MEDIUM', 'HIGH'),
+    IN p_errorSource LONGTEXT,
+    IN p_errorDetails JSON,
+    IN p_userID INT,
+    IN p_ipAddress VARCHAR(45),
     IN p_ticket varchar(50)
 )
 BEGIN
-    INSERT INTO ErrorLog (
-        ErrorMessage,
-        ErrorCode,
-        ErrorSeverity,
-        ErrorSource,
-        ErrorDetails,
-        UserID,
-        IPAddress,
+    INSERT INTO ErrorLogs (
+        errorMessage,
+        errorCode,
+        errorSeverity,
+        errorSource,
+        errorDetails,
+        userID,
+        ipAddress,
         ticket
     )
     VALUES (
-        p_ErrorMessage,
-        p_ErrorCode,
-        p_ErrorSeverity,
-        p_ErrorSource,
-        p_ErrorDetails,
-        p_UserID,
-        p_IPAddress,
+        p_errorMessage,
+        p_errorCode,
+        p_errorSeverity,
+        p_errorSource,
+        p_errorDetails,
+        p_userID,
+        p_ipAddress,
         p_ticket
     );
 
-    DELETE FROM ErrorLog WHERE ErrorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+    DELETE FROM ErrorLogs WHERE errorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END 
 
 create procedure if not exists USP_USERS_SELECT_EXISTS(
@@ -74,8 +75,6 @@ begin
     and u.projectId = IFNULL(_projectId, u.projectId);
 end
 
-select * from users
-select * from ErrorLog
 -- SET FOREIGN_KEY_CHECKS=0;
 -- drop table Users
 -- drop table projects
@@ -92,3 +91,4 @@ VALUES (
     CURRENT_DATE(),
     CURRENT_DATE()
   );
+

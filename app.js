@@ -102,30 +102,30 @@ app.use('/api/v1/projects', projectsController);
     
     Projects.findCreateFind({
         where: {
-            Name: 'Default'
+            name: 'Default'
         },
         defaults:{
-            Name: 'Default',
-            Description: 'Default'
+            name: 'Default',
+            description: 'Default'
         }
     });
 
     DocumentTypes.findCreateFind({
         where: {
-            Name: 'CPF'
+            name: 'CPF'
         },
         defaults:{
-            Name: 'CPF',
-            Description: 'Cadastro de Pessoas Física'
+            name: 'CPF',
+            description: 'Cadastro de Pessoas Física'
         }
     });
     DocumentTypes.findCreateFind({
         where: {
-            Name: 'CNPJ'
+            name: 'CNPJ'
         },
         defaults:{
-            Name: 'CNPJ',
-            Description: 'Cadastro Nacional de Pessoas Jurídicas'
+            name: 'CNPJ',
+            description: 'Cadastro Nacional de Pessoas Jurídicas'
         }
     });
 })();
