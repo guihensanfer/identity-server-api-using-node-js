@@ -24,6 +24,37 @@ const db = require('../../db');
  *     responses:
  *       '200':
  *         description: Success.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 success:
+ *                   type: boolean
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       documentTypeId:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                 currentPage:
+ *                   type: integer
+ *                 totalPages:
+ *                   type: integer
  *       '404':
  *         description: Page not found.
  */
@@ -36,7 +67,10 @@ router.get('/get-all', util.checkToken, async (req, res) => {
 
         const result = await DocumentTypes.findAndCountAll({
             limit: util.PAGE_SIZE,
-            offset: offset
+            offset: offset,
+            attributes: {
+                exclude: ['updatedAt']
+            }
         });
 
         const totalPages = Math.ceil(result.count / util.PAGE_SIZE);
@@ -45,11 +79,7 @@ router.get('/get-all', util.checkToken, async (req, res) => {
             return await util.sendResponse(res, false, 404, 'Page not found', null, 'Page not found');
         }
 
-        return await util.sendResponse(res, true, 200, 'Success', {
-            data: result.rows,
-            currentPage: currentPage,
-            totalPages: totalPages
-        });
+        return await util.sendResponse(res, true, 200, 'Success', result.rows, null, currentPage, totalPages);
     } catch (err) {
         let ticket = uuidv4();
         let errorLog = new ErrorLogModel(

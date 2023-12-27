@@ -16,24 +16,39 @@ function checkToken(req, res, next){
     return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
   }
 
+ 
   try{
     let secret = process.env.SECRET;
 
-    jwt.verify(token, secret);
-
-    next();
+    jwt.verify(token, secret, (err, decoded) => {
+      if (err) {
+        return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
+      }
+  
+      // Add the decoded user information to the request object
+      req.user = decoded;
+      next();
+    });
   }
   catch(err){
     return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
   }
 }
 
-async function sendResponse(res,success, status, message, data = null, errors = null) {
+async function sendResponse(res,success, status, message, data = null, errors = null, currentPage = null, totalPages = null) {
   return new Promise((resolve, reject) => {
       const response = { message };
       response.success = success;
       response.errors = errors; 
       response.data = data; 
+
+      if(currentPage){
+        response.currentPage = currentPage;
+      }
+
+      if(totalPages){
+        response.totalPages = totalPages;
+      }
                   
       res.status(status).json(response);
       resolve();

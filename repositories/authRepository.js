@@ -9,39 +9,39 @@ const MAX_DOCUMENT_LENGTH = 50;
 const MAX_LANGUAGE_LENGTH = 50;
 
 const data = db._sequealize.define('Users', {
-  UserId: {
+  userId: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
       primaryKey: true,
   },
-  FirstName: {
+  firstName: {
       type: Sequelize.STRING(MAX_FIRSTNAME_LENGTH),
       allowNull: false,
   },
-  LastName: {
+  lastName: {
       type: Sequelize.STRING(MAX_LASTNAME_LENGTH),
   },
-  Email: {
+  email: {
       type: Sequelize.STRING(MAX_EMAIL_LENGTH),
       allowNull: false,
       unique: 'UQ_EMAIL_PROJECTID', // Adicionando índice único
   },
-  Password: {
+  password: {
       type: Sequelize.STRING(MAX_PASSWORD_LENGTH),
   },
-  Guid: {
+  guid: {
       type: Sequelize.STRING(MAX_GUID_LENGTH),
       allowNull: false,
       defaultValue: Sequelize.literal('UUID()')
   },
-  Document: {
+  document: {
       type: Sequelize.STRING(MAX_DOCUMENT_LENGTH),
   },
-  DocumentTypeId: {
+  documentTypeId: {
       type: Sequelize.INTEGER,
       allowNull: true,
   },
-  ProjectId: {
+  projectId: {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
@@ -50,7 +50,7 @@ const data = db._sequealize.define('Users', {
       },
       unique: 'UQ_EMAIL_PROJECTID', // Adicionando índice único
   },
-  DefaultLanguage: {
+  defaultLanguage: {
       type: Sequelize.STRING(MAX_LANGUAGE_LENGTH),
       allowNull: true,
   },
