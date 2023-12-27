@@ -211,6 +211,32 @@ router.post('/register', async (req, res) => {
  *     responses:
  *       '200':
  *         description: Log in was successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Message indicating successful login
+ *                 success:
+ *                   type: boolean
+ *                   description: Indicates if the login was successful
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: List of errors (null in case of success)
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       description: User authentication token
+ *                     expiresAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Token expiration date and time
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':

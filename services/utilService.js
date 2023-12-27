@@ -3,6 +3,12 @@ const _ = require('lodash');
 const DEFAULT_PAGE = 1;
 const PAGE_SIZE = 10;
 
+function extractNumbers(value) {  
+  const numbersOnly = value.replace(/\D/g, '');
+
+  return numbersOnly; // Return only the numbers
+}
+
 function checkToken(req, res, next){
   let authHeader = req.headers['authorization'];
 
@@ -101,6 +107,7 @@ module.exports = {
     isValidEmail,
     sendResponse,
     checkToken,
+    extractNumbers,
     DEFAULT_PAGE,
     PAGE_SIZE
 }

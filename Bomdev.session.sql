@@ -92,3 +92,6 @@ VALUES (
     CURRENT_DATE()
   );
 
+
+
+select * from users

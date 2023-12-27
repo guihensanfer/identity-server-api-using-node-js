@@ -1,5 +1,6 @@
 const cpf = require('cpf-cnpj-validator').cpf;
 const cnpj = require('cpf-cnpj-validator').cnpj;
+const util = require('../services/utilService');
 
 
 class DocumentTypesModel{
@@ -13,7 +14,7 @@ function isValid(documentObj){
     var result = {
         valid: true,
         msg:''
-    };
+    };    
 
     if(!documentObj){        
         result.valid = false;
@@ -33,6 +34,8 @@ function isValid(documentObj){
         
         return result;
     }
+
+    documentObj.documentValue = util.extractNumbers(documentObj.documentValue).trim();
 
     switch(documentObj.documentTypeId){
         case 1:
