@@ -112,6 +112,15 @@ app.use('/api/v1/projects', projectsController);
             description: 'Default'
         }
     });
+    Projects.findCreateFind({
+        where: {
+            name: 'REP'
+        },
+        defaults:{
+            name: 'REP',
+            description: 'Revenues, Expensives and Provisions'
+        }
+    });
 
     DocumentTypes.findCreateFind({
         where: {
@@ -159,4 +168,5 @@ app.use('/api/v1/projects', projectsController);
             description: util.ROLE_USER
         }
     });
+    
 })();
