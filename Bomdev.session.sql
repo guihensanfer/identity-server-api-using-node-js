@@ -83,3 +83,14 @@ CREATE PROCEDURE IF NOT EXISTS USP_Roles_GET_BY_NAME(
 BEGIN
     select roleId from Roles where name = p_roleName;
 END
+
+drop procedure if exists USP_Roles_GET_BY_ID;
+CREATE PROCEDURE IF NOT EXISTS USP_Roles_GET_BY_ID(
+    IN p_rolesIds VARCHAR(255)
+)
+BEGIN
+    SET @query = CONCAT('SELECT distinct name FROM Roles WHERE roleId IN (', p_rolesIds, ')');
+    PREPARE stmt FROM @query;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END

@@ -36,7 +36,26 @@ async function getRoleIdByName(roleName){
     }
 }
 
+async function getRoleArrayNamesByIds(roleIds){
+    try
+    {
+        let values = roleIds.join(',');
+
+        let res = await db.executeProcedure('USP_Roles_GET_BY_ID', [values]);
+
+        if(!res){
+            return null;
+        }
+       
+        return res[0][0].map(res => res.name);
+    }
+    catch(err){
+        throw err; 
+    }
+}
+
 module.exports = {
     data,
-    getRoleIdByName
+    getRoleIdByName,
+    getRoleArrayNamesByIds
 };

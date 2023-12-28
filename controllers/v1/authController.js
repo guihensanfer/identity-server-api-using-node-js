@@ -345,16 +345,32 @@ router.post('/login', async (req, res) => {
             }            
         }
 
+        let userRoles = await UsersRoles.data.findAll({
+            where: {
+                userId: user.userId
+            }
+        });
+
+        let roleIds = userRoles.map(x => x.roleId);
+
+        if(!userRoles || userRoles.length <= 0){
+            throw new Error('Cannot get user roles.');
+        }
+
+        let roleNames = await Roles.getRoleArrayNamesByIds(roleIds);
+
         let secret = process.env.SECRET;
         let token = jwt.sign({
             
-            id: user.UserId            
-            
+            id: user.userId,
+            userEmail: user.email,
+            userName: user.firstName,
+            roles: [roleNames]
         },
         secret,
         {
             expiresIn: '1h'
-        })
+        });
 
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 1);

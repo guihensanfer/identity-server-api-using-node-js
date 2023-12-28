@@ -9,36 +9,39 @@ function extractNumbers(value) {
   return numbersOnly; // Return only the numbers
 }
 
-function checkToken(req, res, next){
-  let authHeader = req.headers['authorization'];
+function checkToken(role) {
+  return (req, res, next) => {
+    let authHeader = req.headers['authorization'];
 
-  if(_.isNull(authHeader) || _.isEmpty(authHeader)){
-    return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
-  }
+    if (_.isNull(authHeader) || _.isEmpty(authHeader)) {
+      return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
+    }
 
-  let token = authHeader.split(' ')[1];
+    let token = authHeader.split(' ')[1];
 
-  if(!token){
-    return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
-  }
+    if (!token) {
+      return sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
+    }
 
- 
-  try{
-    let secret = process.env.SECRET;
+    try {
+      let secret = process.env.SECRET;
 
-    jwt.verify(token, secret, (err, decoded) => {
-      if (err) {
-        return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
-      }
-  
-      // Add the decoded user information to the request object
-      req.user = decoded;
-      next();
-    });
-  }
-  catch(err){
-    return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
-  }
+      jwt.verify(token, secret, (err, decoded) => {
+        if (err || !decoded.roles || decoded.roles.length <= 0) {
+          return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
+        }
+
+        if (!decoded.roles.flat().includes(role)) { 
+          return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
+        }
+        
+        req.user = decoded;
+        next();
+      });
+    } catch {
+      return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
+    }
+  };
 }
 
 async function sendResponse(res,success, status, message, data = null, errors = null, currentPage = null, totalPages = null) {
