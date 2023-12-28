@@ -62,7 +62,7 @@ const jwt = require('jsonwebtoken');
  *               - projectId
  *     responses:
  *       '201':
- *         description: User has been created.
+ *         description: User successfully created.
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -71,7 +71,7 @@ const jwt = require('jsonwebtoken');
  *         description: Internal Server Error.
  */
 router.post('/register', async (req, res) => {        
-    var { firstName, lastName, document, email, password, projectId, language } = req.body;        
+    var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
     let errors = [];
     try
     {
@@ -138,6 +138,13 @@ router.post('/register', async (req, res) => {
             }
         }
 
+        // defaultLanguage
+        if(!_.isNull(defaultLanguage) && !_.isEmpty(defaultLanguage)){            
+            if(defaultLanguage.length > Auth.MAX_LANGUAGE_LENGTH){
+                errors.push('DefaultLanguage exceeds the maximum allowed length.');     
+            }
+        }        
+
         // Check if user already exists
         let userExists = await Auth.checkUserExists(email, projectId);
         if(userExists){
@@ -156,14 +163,14 @@ router.post('/register', async (req, res) => {
 
         // Create user
         let user = await Auth.data.create({
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
+            firstName: firstName.trim(),
+            lastName: lastName?.trim(),
+            email: email?.trim(),
             password: passwordHash,
-            document: document.documentValue,
+            document: document.documentValue?.trim(),
             documentTypeId: document.documentTypeId,
             projectId: projectId,
-            defaultLanguage: language
+            defaultLanguage: defaultLanguage?.trim()
         });
 
         // Create permission
@@ -185,7 +192,7 @@ router.post('/register', async (req, res) => {
             throw new Error('Cannot create user.');
         }
 
-        return await util.sendResponse(res,true, 201, 'User has been created');
+        return await util.sendResponse(res,true, 201, 'User successfully created');
     }
     catch(err){
         let ticket = uuidv4();
