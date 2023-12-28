@@ -26,4 +26,6 @@ const data = db._sequealize.define('UsersRoles', {
     }
 });
 
-module.exports = data;
+module.exports = {
+    data
+};

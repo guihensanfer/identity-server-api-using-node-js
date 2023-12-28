@@ -1,0 +1,10 @@
+const ROLE_ADMINISTRATOR = 'ADMIN';
+const ROLE_APPLICATION = 'APP';
+const ROLE_USER = 'USER';
+
+
+module.exports = {    
+    ROLE_ADMINISTRATOR,
+    ROLE_APPLICATION,
+    ROLE_USER 
+};

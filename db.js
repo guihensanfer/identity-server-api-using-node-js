@@ -17,7 +17,7 @@ const pool = mysql.createPool({
 });
 
 async function errorLogInsert (errorLogModel){
-  let procedureName = 'USP_ERRORLOG_INSERT';
+  let procedureName = 'USP_ERRORLOGS_INSERT';
   const {
       errorMessage,
       errorCode,
@@ -73,12 +73,13 @@ async function executeProcedure(procedureName, params = []){
   } catch (error) { 
     let errorLog = new ErrorLogModel(
       error.message,
-      0,
+      error.errno ?? 0,
       3,
-      error.stack,
+      'SQL Message: ' + error.sqlmessage + 'SQL: ' + error.sql + '|' + 'Stack: ' + error.stack,
       null,
       null,
-      null
+      null,
+      '[from execute]'
     );    
 
     await errorLogInsert(errorLog);

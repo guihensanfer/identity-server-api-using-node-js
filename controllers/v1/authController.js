@@ -3,7 +3,10 @@ const _ = require('lodash');
 const Auth = require('../../repositories/authRepository');
 const util = require('../../services/utilService');
 const DocumentTypesModel = require('../../models/documentTypesModel');
+const RolesModel = require('../../models/rolesModel');
 const Projects = require('../../repositories/projectsRepository');
+const UsersRoles = require('../../repositories/usersRolesRepository');
+const Roles = require('../../repositories/rolesRepository');
 const bcrypt = require('bcrypt');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
@@ -39,10 +42,14 @@ const jwt = require('jsonwebtoken');
  *                 type: string
  *                 maxLength: 300
  *               document:
- *                 type: string
- *                 maxLength: 50
- *               documentTypeId:
- *                 type: integer
+ *                 type: object
+ *                 properties:
+ *                   documentTypeId:
+ *                     type: integer
+ *                     description: ID of the document type
+ *                   documentValue:
+ *                     type: string
+ *                     description: Value of the document
  *               defaultLanguage:
  *                 type: string
  *                 example: pt-br
@@ -148,7 +155,7 @@ router.post('/register', async (req, res) => {
         let passwordHash = await bcrypt.hashSync(password, salt);
 
         // Create user
-        await Auth.data.create({
+        let user = await Auth.data.create({
             firstName: firstName,
             lastName: lastName,
             email: email,
@@ -158,6 +165,25 @@ router.post('/register', async (req, res) => {
             projectId: projectId,
             defaultLanguage: language
         });
+
+        // Create permission
+        if(user){
+            let userId = user.userId;
+            let roleId = await Roles.getRoleIdByName(RolesModel.ROLE_USER);
+
+            let userRole = await UsersRoles.data.create({
+                userId: userId,
+                roleId: roleId
+            });
+
+            if(!userRole){
+                throw new Error('Cannot create user role.');
+            }
+        }
+        else
+        {
+            throw new Error('Cannot create user.');
+        }
 
         return await util.sendResponse(res,true, 201, 'User has been created');
     }

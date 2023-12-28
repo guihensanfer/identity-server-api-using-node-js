@@ -9,7 +9,7 @@ const projectsController = require('./controllers/v1/projectsController');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 const db = require('./db');
-const util = require('./services/utilService');
+const RolesModel = require('./models/rolesModel');
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -141,31 +141,31 @@ app.use('/api/v1/projects', projectsController);
         }
     });
 
-    Roles.findCreateFind({
+    Roles.data.findCreateFind({
         where: {
-            name: util.ROLE_ADMINISTRATOR
+            name: RolesModel.ROLE_ADMINISTRATOR
         },
         defaults:{
-            name: util.ROLE_ADMINISTRATOR,
-            description: util.ROLE_ADMINISTRATOR
+            name: RolesModel.ROLE_ADMINISTRATOR,
+            description: RolesModel.ROLE_ADMINISTRATOR
         }
     });
-    Roles.findCreateFind({
+    Roles.data.findCreateFind({
         where: {
-            name: util.ROLE_APPLICATION
+            name: RolesModel.ROLE_APPLICATION
         },
         defaults:{
-            name: util.ROLE_APPLICATION,
-            description: util.ROLE_APPLICATION
+            name: RolesModel.ROLE_APPLICATION,
+            description: RolesModel.ROLE_APPLICATION
         }
     });
-    Roles.findCreateFind({
+    Roles.data.findCreateFind({
         where: {
-            name: util.ROLE_USER
+            name: RolesModel.ROLE_USER
         },
         defaults:{
-            name: util.ROLE_USER,
-            description: util.ROLE_USER
+            name: RolesModel.ROLE_USER,
+            description: RolesModel.ROLE_USER
         }
     });
     

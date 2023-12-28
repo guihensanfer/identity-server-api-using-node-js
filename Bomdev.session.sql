@@ -9,7 +9,7 @@ begin
     select concat('ITS IS WORKING 2', parameter) as result;
 end
 
-CREATE TABLE IF NOT EXISTS ErrorLogss (
+CREATE TABLE IF NOT EXISTS ErrorLogs (
     errorID INT AUTO_INCREMENT PRIMARY KEY,
     errorTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     errorMessage TEXT,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS ErrorLogss (
     FOREIGN KEY (userID) REFERENCES Users(userID)
 );
 
-
+drop procedure if exists USP_ErrorLogs_INSERT
 CREATE PROCEDURE IF NOT EXISTS USP_ErrorLogs_INSERT(
     IN p_errorMessage TEXT,
     IN p_errorCode INT,
@@ -78,3 +78,13 @@ end
 -- SET FOREIGN_KEY_CHECKS=0;
 -- drop table Users
 -- drop table projects
+
+drop procedure if exists USP_Roles_GET_BY_NAME;
+CREATE PROCEDURE IF NOT EXISTS USP_Roles_GET_BY_NAME(
+    IN p_roleName TEXT   
+)
+BEGIN
+    select roleId from Roles where name = p_roleName;
+END
+
+

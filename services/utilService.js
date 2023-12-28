@@ -2,9 +2,6 @@ const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const DEFAULT_PAGE = 1;
 const PAGE_SIZE = 10;
-const ROLE_ADMINISTRATOR = 'ADMIN';
-const ROLE_APPLICATION = 'APP';
-const ROLE_USER = 'APP';
 
 function extractNumbers(value) {  
   const numbersOnly = value.replace(/\D/g, '');
@@ -112,8 +109,5 @@ module.exports = {
     checkToken,
     extractNumbers,
     DEFAULT_PAGE,
-    PAGE_SIZE,
-    ROLE_ADMINISTRATOR,
-    ROLE_APPLICATION,
-    ROLE_USER 
+    PAGE_SIZE
 }

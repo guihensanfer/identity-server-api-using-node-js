@@ -18,4 +18,25 @@ const data = db._sequealize.define('Roles', {
     }
 });
 
-module.exports = data;
+async function getRoleIdByName(roleName){
+    try
+    {
+        let res = await db.executeProcedure('USP_Roles_GET_BY_NAME', [roleName]);
+
+        let value = res[0][0][0].roleId;
+
+        if(value){
+            return parseInt(value);
+        }
+
+        return 0
+    }
+    catch{
+        return 0;
+    }
+}
+
+module.exports = {
+    data,
+    getRoleIdByName
+};
