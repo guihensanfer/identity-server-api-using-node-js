@@ -11,6 +11,7 @@ const bcrypt = require('bcrypt');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * @swagger
@@ -70,8 +71,10 @@ const jwt = require('jsonwebtoken');
  *         description: Internal Server Error.
  */
 router.post('/register', async (req, res) => {        
+    let currentTicket = uuidv4(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
-    let errors = [];
+    let errors = [];    
+
     try
     {
         if (Object.keys(req.body).length === 0) {

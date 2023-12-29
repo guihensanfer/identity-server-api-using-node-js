@@ -106,19 +106,23 @@ CREATE TABLE ProcedureStatistics (
     procedure_name VARCHAR(255) NOT NULL,
     execution_time_ms INT NOT NULL,
     execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ticket varchar(50) null,
     sqlCall LONGTEXT null,
     INDEX (procedure_name),
-    INDEX (execution_date)
+    INDEX (execution_date),
+    INDEX (ticket)
 );
 
+drop procedure USP_ProcedureStatistics_Insert
 CREATE PROCEDURE USP_ProcedureStatistics_Insert (
     IN p_procedureName VARCHAR(255),
     IN p_executionTime INT,
-    IN p_sqlCall LONGTEXT
+    IN p_sqlCall LONGTEXT,
+    IN p_ticket varchar(50)
 )
 BEGIN
-    INSERT INTO ProcedureStatistics (procedure_name, execution_time_ms, sqlCall)
-    VALUES (p_procedureName, p_executionTime, p_sqlCall);
+    INSERT INTO ProcedureStatistics (procedure_name, execution_time_ms, sqlCall, ticket)
+    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket);
 
     DELETE FROM ProcedureStatistics
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);

@@ -10,7 +10,6 @@ const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proc
 });
 const ERRORLOGS_PROCEDURE_NAME = 'USP_ERRORLOGS_INSERT';
 const STATISTICS_PROCEDURE_NAME = 'USP_ProcedureStatistics_Insert';
-
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -24,13 +23,15 @@ async function statisticsInsert (statatisticsModel){
   const {
     procedureName, 
     executionTime, 
-    sqlCall
+    sqlCall,
+    ticket
   } = statatisticsModel;
   
   await executeProcedure(STATISTICS_PROCEDURE_NAME, [
     procedureName, 
     executionTime, 
-    sqlCall
+    sqlCall,
+    ticket
   ]);
 }
 
@@ -60,12 +61,12 @@ async function errorLogInsert (errorLogModel){
   ]);
 }
 
-async function executeProcedure(procedureName, params = []){  
+async function executeProcedure(procedureName, params = [], ticket = 'default'){  
   let startTime = performance.now();
   const placeholders = params?.map(() => '?').join(',');
   const callProcedure = `CALL ${procedureName}(${placeholders})`;   
   const formattedParams = params?.map(param => {
-    const paramType = util.getParameterType(param);
+    let paramType = util.getParameterType(param);
       
     if (paramType === 'int') {
       return parseInt(param, 10);
@@ -91,10 +92,10 @@ async function executeProcedure(procedureName, params = []){
 
   } catch (error) { 
     let errorLog = new ErrorLogModel(
-      error.message,
+      error.message + '|Ticket: ' + ticket,
       error.errno ?? 0,
       3,
-      'SQL Message: ' + error.sqlmessage + 'SQL: ' + error.sql + '|' + 'Stack: ' + error.stack,
+      'SQL Message: ' + error.sqlmessage + '|SQL: ' + error.sql + '|Stack: ' + error.stack,
       null,
       null,
       null,
@@ -114,7 +115,11 @@ async function executeProcedure(procedureName, params = []){
     
     // statistics
     if(procedureName != ERRORLOGS_PROCEDURE_NAME && procedureName != STATISTICS_PROCEDURE_NAME){
-      let statistic = new ProcedureStatistics(procedureName, timeElapsed, `CALL ${procedureName}(${formattedParams?.join(',')})`);
+      let statistic = new ProcedureStatistics(procedureName, 
+        timeElapsed, 
+        `CALL ${procedureName}(${formattedParams?.join(',')})`,
+        ticket
+      );
       
       // Without await for prevent method wait for conclusion
       statisticsInsert(statistic);
