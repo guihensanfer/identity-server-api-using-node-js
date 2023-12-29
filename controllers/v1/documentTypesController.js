@@ -58,7 +58,7 @@ const db = require('../../db');
  *       '404':
  *         description: Page not found.
  */
-router.get('/get-all', util.checkToken('USER'), async (req, res) => {            
+router.get('/get-all', util.checkToken(['ADMIN', 'USER']), async (req, res) => {            
     const { page } = req.query;
     const currentPage = parseInt(page) || util.DEFAULT_PAGE;
 

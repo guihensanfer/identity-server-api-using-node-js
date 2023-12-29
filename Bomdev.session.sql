@@ -9,6 +9,7 @@ begin
     select concat('ITS IS WORKING 2', parameter) as result;
 end
 
+drop table if exists ErrorLogs
 CREATE TABLE IF NOT EXISTS ErrorLogs (
     errorID INT AUTO_INCREMENT PRIMARY KEY,
     errorTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,7 +72,7 @@ create procedure if not exists USP_USERS_SELECT_EXISTS(
     in _projectId int
 )
 begin
-    select count(1) as result from users u 
+    select count(1) as result from Users u 
     where u.email = IFNULL(_email, u.email) 
     and u.projectId = IFNULL(_projectId, u.projectId);
 end

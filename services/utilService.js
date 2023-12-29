@@ -9,7 +9,7 @@ function extractNumbers(value) {
   return numbersOnly; // Return only the numbers
 }
 
-function checkToken(role) {
+function auth(roles) {
   return (req, res, next) => {
     let authHeader = req.headers['authorization'];
 
@@ -27,11 +27,15 @@ function checkToken(role) {
       let secret = process.env.SECRET;
 
       jwt.verify(token, secret, (err, decoded) => {
-        if (err || !decoded.roles || decoded.roles.length <= 0) {
+        if (err || !decoded.roles || decoded.roles.length === 0) {
           return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
         }
 
-        if (!decoded.roles.flat().includes(role)) { 
+        let userRoles = Array.isArray(decoded.roles) ? decoded.roles.flat() : [decoded.roles];
+
+        let hasPermission = roles.some(role => userRoles.includes(role));
+
+        if (!hasPermission) {
           return sendResponse(res, false, 403, 'Forbidden', null, ['Forbidden']);
         }
         
@@ -43,6 +47,7 @@ function checkToken(role) {
     }
   };
 }
+
 
 async function sendResponse(res,success, status, message, data = null, errors = null, currentPage = null, totalPages = null) {
   return new Promise((resolve, reject) => {
@@ -109,7 +114,7 @@ module.exports = {
     formatJSON,
     isValidEmail,
     sendResponse,
-    checkToken,
+    checkToken: auth,
     extractNumbers,
     DEFAULT_PAGE,
     PAGE_SIZE
