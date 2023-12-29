@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid');
+
 class ErrorLogModel {
     constructor(
         errorMessage,
@@ -17,8 +19,23 @@ class ErrorLogModel {
         this.errorDetails = errorDetails;
         this.userID = userID;
         this.ipAddress = ipAddress;        
-        this.ticket = ticket    
+        this.ticket = ticket            
     }    
+
+    static DefaultForEndPoints(req, err) {
+        let ticket = uuidv4();       
+
+        return new ErrorLogModel(
+            req.path,
+            0,
+            3,
+            err.message + err.stack,
+            req.body ?? null,
+            req.user ? req.user.id : null,
+            req.ip,
+            ticket
+        );
+    }
 }
 
 module.exports = ErrorLogModel;

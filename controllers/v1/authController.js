@@ -10,7 +10,6 @@ const Roles = require('../../repositories/rolesRepository');
 const bcrypt = require('bcrypt');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
-const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 
 /**
@@ -195,21 +194,11 @@ router.post('/register', async (req, res) => {
         return await util.sendResponse(res,true, 201, 'User successfully created');
     }
     catch(err){
-        let ticket = uuidv4();
-        let errorLog = new ErrorLogModel(
-            '/auth/register',
-            0,
-            3,
-            err.message + err.stack,
-            null,
-            null,
-            null,
-            ticket
-          );    
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+
+        await db.errorLogInsert(errorModel);
       
-        await db.errorLogInsert(errorLog);
-      
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
+        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
     }    
 });
 
@@ -286,7 +275,7 @@ router.post('/login', async (req, res) => {
     let errors = [];
 
     try
-    {        
+    {                
         // Email
         if(_.isNull(email) || _.isEmpty(email)){
             errors.push('Email is required.');
@@ -360,8 +349,7 @@ router.post('/login', async (req, res) => {
         let roleNames = await Roles.getRoleArrayNamesByIds(roleIds);
 
         let secret = process.env.SECRET;
-        let token = jwt.sign({
-            
+        let token = jwt.sign({            
             id: user.userId,
             userEmail: user.email,
             userName: user.firstName,
@@ -380,22 +368,12 @@ router.post('/login', async (req, res) => {
             expiresAt: expiresAt
         }, null);
     }
-    catch(err){
-        let ticket = uuidv4();
-        let errorLog = new ErrorLogModel(
-            '/auth/login',
-            0,
-            3,
-            err.message + err.stack,
-            null,
-            null,
-            null,
-            ticket
-          );    
+    catch(err){                 
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+
+        await db.errorLogInsert(errorModel);
       
-        await db.errorLogInsert(errorLog);
-      
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
+        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
     } 
 });
 

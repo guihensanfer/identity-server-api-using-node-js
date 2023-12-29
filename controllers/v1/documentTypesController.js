@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const util = require('../../services/utilService');
 const DocumentTypes = require('../../repositories/documentTypesRepository');
-const { v4: uuidv4 } = require('uuid');
 const ErrorLogModel = require('../../models/errorLogModel');
 const db = require('../../db');
 
@@ -62,7 +61,7 @@ router.get('/get-all', util.auth(['ADMIN', 'USER']), async (req, res) => {
     const { page } = req.query;
     const currentPage = parseInt(page) || util.DEFAULT_PAGE;
 
-    try {
+    try {        
         const offset = (currentPage - 1) * util.PAGE_SIZE;
 
         const result = await DocumentTypes.findAndCountAll({
@@ -81,21 +80,11 @@ router.get('/get-all', util.auth(['ADMIN', 'USER']), async (req, res) => {
 
         return await util.sendResponse(res, true, 200, 'Success', result.rows, null, currentPage, totalPages);
     } catch (err) {
-        let ticket = uuidv4();
-        let errorLog = new ErrorLogModel(
-            '/documenttype/get-all',
-            0,
-            3,
-            err.message + err.stack,
-            null,
-            null,
-            null,
-            ticket
-          );    
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+
+        await db.errorLogInsert(errorModel);
       
-        await db.errorLogInsert(errorLog);
-      
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
+        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
     }
 });
 

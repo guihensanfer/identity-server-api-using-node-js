@@ -95,3 +95,5 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 END
+
+select * from ErrorLogs order by errorTime desc

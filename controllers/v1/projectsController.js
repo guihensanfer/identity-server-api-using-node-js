@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const util = require('../../services/utilService');
 const Projects = require('../../repositories/projectsRepository');
-const { v4: uuidv4 } = require('uuid');
 const ErrorLogModel = require('../../models/errorLogModel');
 const db = require('../../db');
 
@@ -71,21 +70,11 @@ router.get('/get-all', async (req, res) => {
 
         return await util.sendResponse(res, true, 200, 'Success', result.rows, null, currentPage, totalPages);
     } catch (err) {
-        let ticket = uuidv4();
-        let errorLog = new ErrorLogModel(
-            '/projects/get-all',
-            0,
-            3,
-            err.message + err.stack,
-            null,
-            null,
-            null,
-            ticket
-          );    
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+
+        await db.errorLogInsert(errorModel);
       
-        await db.errorLogInsert(errorLog);
-      
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + ticket, null, [err.message]);
+        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
     }
 });
 
