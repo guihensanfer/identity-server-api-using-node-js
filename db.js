@@ -19,6 +19,7 @@ const pool = mysql.createPool({
     connectionLimit: 10,
 });
 
+
 async function statisticsInsert (statatisticsModel){  
   const {
     procedureName, 
@@ -32,6 +33,7 @@ async function statisticsInsert (statatisticsModel){
     sqlCall
   ]);
 }
+
 
 async function errorLogInsert (errorLogModel){
   let procedureName = ERRORLOGS_PROCEDURE_NAME;
@@ -58,31 +60,31 @@ async function errorLogInsert (errorLogModel){
   ]);
 }
 
-async function executeProcedure(procedureName, params = []){
-  try {
-    const placeholders = params.map(() => '?').join(',');
-    const callProcedure = `CALL ${procedureName}(${placeholders})`;    
-    const formattedParams = params.map(param => {
-      const paramType = util.getParameterType(param);
+async function executeProcedure(procedureName, params = []){  
+  let startTime = performance.now();
+  const placeholders = params?.map(() => '?').join(',');
+  const callProcedure = `CALL ${procedureName}(${placeholders})`;   
+  const formattedParams = params?.map(param => {
+    const paramType = util.getParameterType(param);
+      
+    if (paramType === 'int') {
+      return parseInt(param, 10);
+    } else if (paramType === 'double') {
+      return parseFloat(param);
+    } else if (paramType === 'varchar') {
+      return param;
+    } else if (paramType === 'datetime') {
+      return util.formatDatetime(param);
+    } else if (paramType === 'boolean') {
+      return param ? 1 : 0; // Convertendo para 0 ou 1
+    } else if (paramType === 'json') {
+      return util.formatJSON(param);
+    }      
 
-      if (paramType === 'int') {
-        return parseInt(param, 10);
-      } else if (paramType === 'double') {
-        return parseFloat(param);
-      } else if (paramType === 'varchar') {
-        return param;
-      } else if (paramType === 'datetime') {
-        return util.formatDatetime(param);
-      } else if (paramType === 'boolean') {
-        return param ? 1 : 0; // Convertendo para 0 ou 1
-      } else if (paramType === 'json') {
-        return util.formatJSON(param);
-      }
-      // Adicione mais validações para outros tipos conforme necessário
+    return param; 
+  });   
 
-      return param; // Se não corresponder a nenhum tipo, mantém o valor
-    });       
-    
+  try {                   
     const results = await pool.promise().query(callProcedure, formattedParams);
     
     return results;
@@ -104,9 +106,18 @@ async function executeProcedure(procedureName, params = []){
     throw error;
   }
   finally{
+    let finish = performance.now();
+    let timeElapsed = finish - startTime;
+
+    startTime = null;
+    finish = null;
+    
     // statistics
     if(procedureName != ERRORLOGS_PROCEDURE_NAME && procedureName != STATISTICS_PROCEDURE_NAME){
-
+      let statistic = new ProcedureStatistics(procedureName, timeElapsed, `CALL ${procedureName}(${formattedParams?.join(',')})`);
+      
+      // Without await for prevent method wait for conclusion
+      statisticsInsert(statistic);
     }
   }
 }

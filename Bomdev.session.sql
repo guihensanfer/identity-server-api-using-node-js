@@ -1,12 +1,16 @@
+drop procedure USP_TEST
 create procedure if not exists USP_TEST()
 begin
-    select 'ITS IS WORKING';
+    select 'ITS IS WORKING' as result;
 end
 
+drop procedure USP_TEST2
 create procedure USP_TEST2(in parameter varchar(200))
 begin
     select concat('ITS IS WORKING ', parameter) as result;
     select concat('ITS IS WORKING 2', parameter) as result;
+
+    
 end
 
 drop table if exists ErrorLogs
@@ -119,3 +123,6 @@ BEGIN
     DELETE FROM ProcedureStatistics
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END
+
+select * from ProcedureStatistics order by execution_date desc
+

@@ -78,6 +78,20 @@ app.use('/api/v1/projects', projectsController);
 
 // Database
 (async () => {
+    await db.executeProcedure('USP_TEST')
+    .then(res => {
+
+        console.log(res[0][0][0].result);
+        
+        // var records = res[0];
+
+        // for(var x = 0; x < res.length; x++){
+        //     console.log(records[0][x].result);
+        // }
+    })
+    .catch(ex => {
+        console.log('exception: ' + ex)
+    });
     await db.executeProcedure('USP_TEST2',['test'])
     .then(res => {
 
