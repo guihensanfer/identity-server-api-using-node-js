@@ -114,7 +114,7 @@ module.exports = {
     formatJSON,
     isValidEmail,
     sendResponse,
-    checkToken: auth,
+    auth,
     extractNumbers,
     DEFAULT_PAGE,
     PAGE_SIZE
