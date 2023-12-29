@@ -96,4 +96,26 @@ BEGIN
     DEALLOCATE PREPARE stmt;
 END
 
-select * from ErrorLogs order by errorTime desc
+drop table ProcedureStatistics
+CREATE TABLE ProcedureStatistics (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    procedure_name VARCHAR(255) NOT NULL,
+    execution_time_ms INT NOT NULL,
+    execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    sqlCall LONGTEXT null,
+    INDEX (procedure_name),
+    INDEX (execution_date)
+);
+
+CREATE PROCEDURE USP_ProcedureStatistics_Insert (
+    IN p_procedureName VARCHAR(255),
+    IN p_executionTime INT,
+    IN p_sqlCall LONGTEXT
+)
+BEGIN
+    INSERT INTO ProcedureStatistics (procedure_name, execution_time_ms, sqlCall)
+    VALUES (p_procedureName, p_executionTime, p_sqlCall);
+
+    DELETE FROM ProcedureStatistics
+    WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+END

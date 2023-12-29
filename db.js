@@ -1,5 +1,6 @@
 const mysql = require('mysql2');
 const ErrorLogModel = require('./models/errorLogModel');
+const ProcedureStatistics = require('./models/procedureStatisticsModel');
 const util = require('./services/utilService');
 const Sequelize = require('sequelize');
 const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
@@ -7,6 +8,8 @@ const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proc
   host:process.env.DB_HOST,
   port:3306
 });
+const ERRORLOGS_PROCEDURE_NAME = 'USP_ERRORLOGS_INSERT';
+const STATISTICS_PROCEDURE_NAME = 'USP_ProcedureStatistics_Insert';
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -16,8 +19,22 @@ const pool = mysql.createPool({
     connectionLimit: 10,
 });
 
+async function statisticsInsert (statatisticsModel){  
+  const {
+    procedureName, 
+    executionTime, 
+    sqlCall
+  } = statatisticsModel;
+  
+  await executeProcedure(STATISTICS_PROCEDURE_NAME, [
+    procedureName, 
+    executionTime, 
+    sqlCall
+  ]);
+}
+
 async function errorLogInsert (errorLogModel){
-  let procedureName = 'USP_ERRORLOGS_INSERT';
+  let procedureName = ERRORLOGS_PROCEDURE_NAME;
   const {
       errorMessage,
       errorCode,
@@ -85,6 +102,12 @@ async function executeProcedure(procedureName, params = []){
     await errorLogInsert(errorLog);
 
     throw error;
+  }
+  finally{
+    // statistics
+    if(procedureName != ERRORLOGS_PROCEDURE_NAME && procedureName != STATISTICS_PROCEDURE_NAME){
+
+    }
   }
 }
 
