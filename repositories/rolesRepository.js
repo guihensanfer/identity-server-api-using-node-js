@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
+const idb = require('../interfaces/idb');
 
 const data = db._sequealize.define('Roles', {
     roleId:{
@@ -18,44 +19,50 @@ const data = db._sequealize.define('Roles', {
     }
 });
 
-async function getRoleIdByName(roleName){
-    try
-    {
-        let res = await db.executeProcedure('USP_Roles_GET_BY_NAME', [roleName]);
 
-        let value = res[0][0][0].roleId;
+class Procs extends idb{
+    constructor(ticket){
+        super(ticket);
+    }
 
-        if(value){
-            return parseInt(value);
+    async getRoleIdByName(roleName){
+        try
+        {
+            let res = await db.executeProcedure('USP_Roles_GET_BY_NAME', [roleName], this.ticket);
+    
+            let value = res[0][0][0].roleId;
+    
+            if(value){
+                return parseInt(value);
+            }
+    
+            return 0
         }
-
-        return 0
-    }
-    catch{
-        return 0;
-    }
-}
-
-async function getRoleArrayNamesByIds(roleIds){
-    try
-    {
-        let values = roleIds.join(',');
-
-        let res = await db.executeProcedure('USP_Roles_GET_BY_ID', [values]);
-
-        if(!res){
-            return null;
+        catch{
+            return 0;
         }
-       
-        return res[0][0].map(res => res.name);
     }
-    catch(err){
-        throw err; 
+    
+    async getRoleArrayNamesByIds(roleIds){
+        try
+        {
+            let values = roleIds.join(',');
+    
+            let res = await db.executeProcedure('USP_Roles_GET_BY_ID', [values], this.ticket);
+    
+            if(!res){
+                return null;
+            }
+           
+            return res[0][0].map(res => res.name);
+        }
+        catch(err){
+            throw err; 
+        }
     }
 }
 
 module.exports = {
     data,
-    getRoleIdByName,
-    getRoleArrayNamesByIds
+    Procs
 };

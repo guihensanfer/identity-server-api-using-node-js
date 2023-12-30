@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
+const idb = require('../interfaces/idb');
 
 const data = db._sequealize.define('Projects', {
     projectId:{
@@ -18,4 +19,14 @@ const data = db._sequealize.define('Projects', {
     }
 });
 
-module.exports = data;
+class Procs extends idb{
+    constructor(ticket){
+        super(ticket);
+    }
+    
+}
+
+module.exports = {
+    data,
+    Procs
+};

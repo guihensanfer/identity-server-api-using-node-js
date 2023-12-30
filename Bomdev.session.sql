@@ -108,6 +108,7 @@ CREATE TABLE ProcedureStatistics (
     execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ticket varchar(50) null,
     sqlCall LONGTEXT null,
+    successfully bit not null,
     INDEX (procedure_name),
     INDEX (execution_date),
     INDEX (ticket)
@@ -118,15 +119,18 @@ CREATE PROCEDURE USP_ProcedureStatistics_Insert (
     IN p_procedureName VARCHAR(255),
     IN p_executionTime INT,
     IN p_sqlCall LONGTEXT,
-    IN p_ticket varchar(50)
+    IN p_ticket varchar(50),
+    IN p_successfully bit
 )
 BEGIN
-    INSERT INTO ProcedureStatistics (procedure_name, execution_time_ms, sqlCall, ticket)
-    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket);
+    INSERT INTO ProcedureStatistics (procedure_name, execution_time_ms, sqlCall, ticket, successfully)
+    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket, p_successfully);
 
     DELETE FROM ProcedureStatistics
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END
 
-select * from ProcedureStatistics order by execution_date desc
+select * from ProcedureStatistics where ticket='14a9fa0e-b37e-442e-a7aa-c20fd1792e42' order by execution_date desc
+select * from ErrorLogs order by errortime desc
 
+truncate table ProcedureStatistics

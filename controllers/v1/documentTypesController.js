@@ -1,8 +1,8 @@
 const router = require('express').Router();
-const util = require('../../services/utilService');
 const DocumentTypes = require('../../repositories/documentTypesRepository');
 const ErrorLogModel = require('../../models/errorLogModel');
 const db = require('../../db');
+const httpP = require('../../models/httpResponsePatternModel');
 
 /**
  * @swagger
@@ -57,34 +57,45 @@ const db = require('../../db');
  *       '404':
  *         description: Page not found.
  */
-router.get('/get-all', util.auth(['ADMIN', 'USER']), async (req, res) => {            
+router.get('/get-all', httpP.HTTPResponsePatternModel.auth(['ADMIN', 'USER']), async (req, res) => {   
+    let response = new httpP.HTTPResponsePatternModel();
+    const currentTicket = response.getTicket();          
     const { page } = req.query;
-    const currentPage = parseInt(page) || util.DEFAULT_PAGE;
+    const currentPage = parseInt(page) || httpP.DEFAULT_PAGE;
 
     try {        
-        const offset = (currentPage - 1) * util.PAGE_SIZE;
+        const offset = (currentPage - 1) * httpP.PAGE_SIZE;
 
-        const result = await DocumentTypes.findAndCountAll({
-            limit: util.PAGE_SIZE,
+        const result = await DocumentTypes.data.findAndCountAll({
+            limit: httpP.PAGE_SIZE,
             offset: offset,
             attributes: {
                 exclude: ['updatedAt']
             }
         });
 
-        const totalPages = Math.ceil(result.count / util.PAGE_SIZE);
+        const totalPages = Math.ceil(result.count / httpP.PAGE_SIZE);
 
-        if (currentPage > totalPages && totalPages !== 0) {
-            return await util.sendResponse(res, false, 404, 'Page not found', null, 'Page not found');
+        response.setPagging(currentPage, totalPages);
+
+        if (currentPage > totalPages && totalPages !== 0) {            
+            response.set(404, false);
+            
+            return await response.sendResponse(res);
         }
 
-        return await util.sendResponse(res, true, 200, 'Success', result.rows, null, currentPage, totalPages);
+        response.set(200, true, null, result.rows);
+        
+        return await response.sendResponse(res);
+
     } catch (err) {
-        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
 
         await db.errorLogInsert(errorModel);
       
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
+        response.set(500, false);
+        
+        return await response.sendResponse(res);
     }
 });
 

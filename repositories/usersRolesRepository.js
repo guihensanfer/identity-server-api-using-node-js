@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
+const idb = require('../interfaces/idb');
 
 const data = db._sequealize.define('UsersRoles', {
     usersRolesId:{
@@ -26,6 +27,14 @@ const data = db._sequealize.define('UsersRoles', {
     }
 });
 
+class Procs extends idb{
+    constructor(ticket){
+        super(ticket);
+    }
+    
+}
+
 module.exports = {
-    data
+    data,
+    Procs
 };

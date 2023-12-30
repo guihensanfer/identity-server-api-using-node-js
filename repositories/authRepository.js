@@ -7,6 +7,7 @@ const MAX_PASSWORD_LENGTH = 300;
 const MAX_GUID_LENGTH = 40;
 const MAX_DOCUMENT_LENGTH = 50;
 const MAX_LANGUAGE_LENGTH = 50;
+const idb = require('../interfaces/idb');
 
 const data = db._sequealize.define('Users', {
   userId: {
@@ -67,21 +68,25 @@ const data = db._sequealize.define('Users', {
   ],
 });
 
-const checkUserExists = async (email = null, projectId = null) => {    
-  try
-  {
-    let res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId]);
+class Procs extends idb{
+  constructor(ticket){
+    super(ticket);
+  }
 
-    return res[0][0][0].result > 0;
+  async checkUserExists(email = null, projectId = null) {
+    try {
+      let res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId], this.ticket);
+      return res[0][0][0].result > 0;
+    } catch {
+      return false;
+    }
   }
-  catch{
-    return false;
-  }
-};
+}
+
 
 module.exports = {
   data,
-  checkUserExists,
+  Procs,
   MAX_FIRSTNAME_LENGTH,
   MAX_LASTNAME_LENGTH,
   MAX_EMAIL_LENGTH,

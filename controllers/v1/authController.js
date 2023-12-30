@@ -11,7 +11,7 @@ const bcrypt = require('bcrypt');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const httpP = require('../../models/httpResponsePatternModel');
 
 /**
  * @swagger
@@ -70,31 +70,34 @@ const { v4: uuidv4 } = require('uuid');
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/register', async (req, res) => {        
-    let currentTicket = uuidv4(); 
+router.post('/register', async (req, res) => {      
+    let response = new httpP.HTTPResponsePatternModel();  
+    const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
-    let errors = [];    
+    let errors = [];  
+    const authProcs = new Auth.Procs(currentTicket);
+    const rolesProcs = new Roles.Procs(currentTicket);
 
     try
     {
         if (Object.keys(req.body).length === 0) {
-            return await util.sendResponse(res, false, 400, 'Bad request, verify your request data.');
+            return await util.sendResponse(res, currentTicket, false, 400, 'Bad request, verify your request data');
         }
 
         // First Name
         if(_.isNull(firstName) || _.isEmpty(firstName)){
-            errors.push('First Name is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('First Name'));
         }
-        else if(firstName.length > Auth.MAX_FIRSTNAME_LENGTH){
-            errors.push('First Name exceeds the maximum allowed length.');        
+        else if(firstName.length > Auth.MAX_FIRSTNAME_LENGTH){            
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('First Name'));        
         }
 
         // Last Name
         if(_.isNull(lastName) || _.isEmpty(lastName)){
-            errors.push('Last Name is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Last Name'));
         }
-        else if(lastName.length > Auth.MAX_LASTNAME_LENGTH){
-            errors.push('Last Name exceeds the maximum allowed length.');        
+        else if(lastName.length > Auth.MAX_LASTNAME_LENGTH){            
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Last Name')); 
         }
 
         // Document
@@ -107,18 +110,18 @@ router.post('/register', async (req, res) => {
 
         // Email
         if(_.isNull(email) || _.isEmpty(email)){
-            errors.push('Email is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
         }
         else if(email.length > Auth.MAX_EMAIL_LENGTH){
-            errors.push('Email exceeds the maximum allowed length.');        
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));                     
         }
-        else if(!util.isValidEmail(email)){
+        else if(!util.isValidEmail(email)){            
             errors.push('Valid email is required.');
         }    
 
         // Password
         if(_.isNull(password) || _.isEmpty(password)){
-            errors.push('Password is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Password'));     
         }
         else if(password.length > Auth.MAX_PASSWORD_LENGTH){
             errors.push('Password exceeds the maximum allowed length.');        
@@ -126,10 +129,10 @@ router.post('/register', async (req, res) => {
 
         // ProjectId
         if(!projectId){
-            errors.push('ProjectId is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
         }
         else{
-            let project = await Projects.findOne({
+            let project = await Projects.data.findOne({
                 where: {
                     projectId: projectId
                 }
@@ -143,19 +146,21 @@ router.post('/register', async (req, res) => {
         // defaultLanguage
         if(!_.isNull(defaultLanguage) && !_.isEmpty(defaultLanguage)){            
             if(defaultLanguage.length > Auth.MAX_LANGUAGE_LENGTH){
-                errors.push('DefaultLanguage exceeds the maximum allowed length.');     
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('DefaultLanguage'));                        
             }
         }        
 
         // Check if user already exists
-        let userExists = await Auth.checkUserExists(email, projectId);
+        let userExists = await authProcs.checkUserExists(email, projectId);
         if(userExists){
-            errors.push('User already exists.');
+            errors.push(httpP.HTTPResponsePatternModel.alreadyExistsMsg('User'));                 
         }    
 
         // ----- Check for errors
         if(errors && errors.length > 0){
-            return await util.sendResponse(res, false, 422, 'Unprocessable entity, the provided data is not valid', null, errors);
+            response.set(422,false, errors);
+
+            return await response.sendResponse(res);
         }
     
     
@@ -178,7 +183,7 @@ router.post('/register', async (req, res) => {
         // Create permission
         if(user){
             let userId = user.userId;
-            let roleId = await Roles.getRoleIdByName(RolesModel.ROLE_USER);
+            let roleId = await rolesProcs.getRoleIdByName(RolesModel.ROLE_USER);
 
             let userRole = await UsersRoles.data.create({
                 userId: userId,
@@ -186,22 +191,24 @@ router.post('/register', async (req, res) => {
             });
 
             if(!userRole){
-                throw new Error('Cannot create user role.');
+                throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('user role'));
             }
         }
         else
         {
-            throw new Error('Cannot create user.');
+            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('user'));
         }
 
-        return await util.sendResponse(res,true, 201, 'User successfully created');
+        response.set(201, true);
+        return await response.sendResponse(res);
     }
     catch(err){
-        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
 
         await db.errorLogInsert(errorModel);
-      
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
+
+        response.set(500, false, [err.message]);      
+        return await response.sendResponse(res);
     }    
 });
 
@@ -241,6 +248,9 @@ router.post('/register', async (req, res) => {
  *             schema:
  *               type: object
  *               properties:
+ *                 ticket:
+ *                   type: string
+ *                   description: The ticket of the request
  *                 message:
  *                   type: string
  *                   description: Message indicating successful login
@@ -255,7 +265,7 @@ router.post('/register', async (req, res) => {
  *                 data:
  *                   type: object
  *                   properties:
- *                     token:
+ *                     accessToken:
  *                       type: string
  *                       description: User authentication token
  *                     expiresAt:
@@ -274,17 +284,20 @@ router.post('/register', async (req, res) => {
  *         description: Internal Server Error.
  */
 router.post('/login', async (req, res) => {    
+    let response = new httpP.HTTPResponsePatternModel();  
+    let currentTicket = response.getTicket(); 
     var { email, password, projectId } = req.body;        
     let errors = [];
+    const rolesProcs = new Roles.Procs(currentTicket);
 
     try
     {                
         // Email
         if(_.isNull(email) || _.isEmpty(email)){
-            errors.push('Email is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
         }
         else if(email.length > Auth.MAX_EMAIL_LENGTH){
-            errors.push('Email exceeds the maximum allowed length.');        
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
         }
         else if(!util.isValidEmail(email)){
             errors.push('Valid email is required.');
@@ -292,18 +305,18 @@ router.post('/login', async (req, res) => {
 
         // Password
         if(_.isNull(password) || _.isEmpty(password)){
-            errors.push('Password is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Password'));
         }
         else if(password.length > Auth.MAX_PASSWORD_LENGTH){
-            errors.push('Password exceeds the maximum allowed length.');        
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Password'));
         }  
 
         // ProjectId
         if(!projectId){
-            errors.push('ProjectId is required.');
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
         }
         else{
-            let project = await Projects.findOne({
+            let project = await Projects.data.findOne({
                 where: {
                     projectId: projectId
                 }
@@ -316,7 +329,8 @@ router.post('/login', async (req, res) => {
 
         // ----- Check for errors
         if(errors && errors.length > 0){
-            return await util.sendResponse(res, false, 422, 'Unprocessable entity, the provided data is not valid', null, errors);
+            response.set(422, false, errors);
+            return await response.sendResponse(res);
         }
     
         // Check user
@@ -328,12 +342,14 @@ router.post('/login', async (req, res) => {
         });
 
         if(!user){
-            return await util.sendResponse(res, false, 404, 'User not found', null, ['User not found']);
+            response.set(404, false);
+            return await response.sendResponse(res);
         }
         else {
             let checkPassword = await bcrypt.compare(password, user.password);
             if(!checkPassword){
-                return await util.sendResponse(res, false, 401, 'Unauthorized', null, ['Unauthorized']);
+                response.set(401, false);
+                return await response.sendResponse(res);
             }            
         }
 
@@ -346,10 +362,10 @@ router.post('/login', async (req, res) => {
         let roleIds = userRoles.map(x => x.roleId);
 
         if(!userRoles || userRoles.length <= 0){
-            throw new Error('Cannot get user roles.');
+            throw new Error(httpP.HTTPResponsePatternModel.cannotGetMsg('User role'));
         }
 
-        let roleNames = await Roles.getRoleArrayNamesByIds(roleIds);
+        let roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);
 
         let secret = process.env.SECRET;
         let token = jwt.sign({            
@@ -366,17 +382,21 @@ router.post('/login', async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 1);
 
-        return await util.sendResponse(res,true, 200, 'Log in was successfully', {
-            token: token,
+        const result = {
+            accessToken: token,
             expiresAt: expiresAt
-        }, null);
+        };
+
+        response.set(200, true, null, result);
+        return await response.sendResponse(res);
     }
     catch(err){                 
-        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err);
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
 
         await db.errorLogInsert(errorModel);
       
-        return await util.sendResponse(res,false, 500, 'Try again later, your ticket is ' + errorModel.ticket, null, [err.message]);
+        response.set(500, false, [err.message]);
+        return await response.sendResponse(res);
     } 
 });
 

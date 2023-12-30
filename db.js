@@ -18,20 +18,21 @@ const pool = mysql.createPool({
     connectionLimit: 10,
 });
 
-
 async function statisticsInsert (statatisticsModel){  
   const {
     procedureName, 
     executionTime, 
     sqlCall,
-    ticket
+    ticket,
+    successfully
   } = statatisticsModel;
   
   await executeProcedure(STATISTICS_PROCEDURE_NAME, [
     procedureName, 
     executionTime, 
     sqlCall,
-    ticket
+    ticket,
+    successfully
   ]);
 }
 
@@ -64,7 +65,8 @@ async function errorLogInsert (errorLogModel){
 async function executeProcedure(procedureName, params = [], ticket = 'default'){  
   let startTime = performance.now();
   const placeholders = params?.map(() => '?').join(',');
-  const callProcedure = `CALL ${procedureName}(${placeholders})`;   
+  const callProcedure = `CALL ${procedureName}(${placeholders})`;  
+  let successfully = true; 
   const formattedParams = params?.map(param => {
     let paramType = util.getParameterType(param);
       
@@ -92,17 +94,19 @@ async function executeProcedure(procedureName, params = [], ticket = 'default'){
 
   } catch (error) { 
     let errorLog = new ErrorLogModel(
-      error.message + '|Ticket: ' + ticket,
+      error.message,
       error.errno ?? 0,
       3,
       'SQL Message: ' + error.sqlmessage + '|SQL: ' + error.sql + '|Stack: ' + error.stack,
       null,
       null,
       null,
-      '[from execute]'
+      ticket
     );    
 
     await errorLogInsert(errorLog);
+
+    successfully = false;
 
     throw error;
   }
@@ -118,7 +122,8 @@ async function executeProcedure(procedureName, params = [], ticket = 'default'){
       let statistic = new ProcedureStatistics(procedureName, 
         timeElapsed, 
         `CALL ${procedureName}(${formattedParams?.join(',')})`,
-        ticket
+        ticket,
+        successfully
       );
       
       // Without await for prevent method wait for conclusion

@@ -117,7 +117,7 @@ app.use('/api/v1/projects', projectsController);
 
     await db._sequealize.sync();
     
-    Projects.findCreateFind({
+    Projects.data.findCreateFind({
         where: {
             name: 'Default'
         },
@@ -126,7 +126,7 @@ app.use('/api/v1/projects', projectsController);
             description: 'Default'
         }
     });
-    Projects.findCreateFind({
+    Projects.data.findCreateFind({
         where: {
             name: 'REP'
         },
@@ -136,7 +136,7 @@ app.use('/api/v1/projects', projectsController);
         }
     });
 
-    DocumentTypes.findCreateFind({
+    DocumentTypes.data.findCreateFind({
         where: {
             name: 'CPF'
         },
@@ -145,7 +145,7 @@ app.use('/api/v1/projects', projectsController);
             description: 'Cadastro de Pessoas Física'
         }
     });
-    DocumentTypes.findCreateFind({
+    DocumentTypes.data.findCreateFind({
         where: {
             name: 'CNPJ'
         },

@@ -22,9 +22,7 @@ class ErrorLogModel {
         this.ticket = ticket            
     }    
 
-    static DefaultForEndPoints(req, err) {
-        let ticket = uuidv4();       
-
+    static DefaultForEndPoints(req, err, ticket = null) {        
         return new ErrorLogModel(
             req.path,
             0,
@@ -33,7 +31,7 @@ class ErrorLogModel {
             req.body ?? null,
             req.user ? req.user.id : null,
             req.ip,
-            ticket
+            ticket ?? uuidv4()
         );
     }
 }
