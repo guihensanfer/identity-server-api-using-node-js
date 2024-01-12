@@ -349,6 +349,11 @@ router.post('/login', async (req, res) => {
         }
         else
         {
+            if(email || password || projectId){
+                response.set(400, false, null, null, "Send only the refresh token without including any additional attributes.");
+                return await response.sendResponse(res);
+            }
+
             const userID = await authProcs.refreshTokenVerify(continueWithRefreshToken, req.ip);
 
             if(!userID || userID <= 0){
