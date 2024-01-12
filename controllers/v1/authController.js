@@ -81,7 +81,9 @@ router.post('/register', async (req, res) => {
     try
     {
         if (Object.keys(req.body).length === 0) {
-            return await util.sendResponse(res, currentTicket, false, 400, 'Bad request, verify your request data');
+            response.set(400,false);
+
+            return await response.sendResponse(res);
         }
 
         // First Name
@@ -236,10 +238,10 @@ router.post('/register', async (req, res) => {
  *                 maxLength: 300
  *               projectId:
  *                 type: integer
- *             required:
- *               - email
- *               - password
- *               - projectId
+ *               continueWithRefreshToken:
+ *                 type: string
+ *                 description: Use this parameter to continue with a refresh token. 1 After the log in, a new refresh token is generated. 2. To obtain a new access token using refresh token, send only the refresh token without including any additional attributes.
+ *                 example: string // TODO If you have this, then send only the refresh token without including any additional attributes
  *     responses:
  *       '200':
  *         description: Log in was successfully.
@@ -268,10 +270,17 @@ router.post('/register', async (req, res) => {
  *                     accessToken:
  *                       type: string
  *                       description: User authentication token
- *                     expiresAt:
+ *                     expiredAccessAt:
  *                       type: string
  *                       format: date-time
- *                       description: Token expiration date and time
+ *                       description: Access token expiration date and time
+ *                     refreshToken:
+ *                       type: string
+ *                       description: Use the refresh token for seamless future authentication. If you wish to utilize the refresh token for logging in, include only the refresh token in your request.
+ *                     expiredRefreshAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Refresh token expiration date and time
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -286,46 +295,82 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {    
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
-    var { email, password, projectId } = req.body;        
+    var { 
+        email, password, projectId, continueWithRefreshToken
+    } = req.body;        
     let errors = [];
     const rolesProcs = new Roles.Procs(currentTicket);
+    const authProcs = new Auth.Procs(currentTicket);
+    let byPassword = true;
 
     try
-    {                
-        // Email
-        if(_.isNull(email) || _.isEmpty(email)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
-        }
-        else if(email.length > Auth.MAX_EMAIL_LENGTH){
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
-        }
-        else if(!util.isValidEmail(email)){
-            errors.push('Valid email is required.');
-        }    
+    {  
+        if (Object.keys(req.body).length === 0) {
+            response.set(400,false);
 
-        // Password
-        if(_.isNull(password) || _.isEmpty(password)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Password'));
+            return await response.sendResponse(res);
         }
-        else if(password.length > Auth.MAX_PASSWORD_LENGTH){
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Password'));
-        }  
+        
+        if(_.isNull(continueWithRefreshToken) || _.isEmpty(continueWithRefreshToken)){
+             // Email
+            if(_.isNull(email) || _.isEmpty(email)){
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
+            }
+            else if(email.length > Auth.MAX_EMAIL_LENGTH){
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
+            }
+            else if(!util.isValidEmail(email)){
+                errors.push('Valid email is required.');
+            }    
 
-        // ProjectId
-        if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
+            // Password
+            if(_.isNull(password) || _.isEmpty(password)){
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Password'));
+            }
+            else if(password.length > Auth.MAX_PASSWORD_LENGTH){
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Password'));
+            }  
+
+            // ProjectId
+            if(!projectId){
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
+            }
+            else{
+                let project = await Projects.data.findOne({
+                    where: {
+                        projectId: projectId
+                    }
+                });
+
+                if(!project){
+                    errors.push('ProjectId is invalid.');
+                }
+            }   
         }
-        else{
-            let project = await Projects.data.findOne({
+        else
+        {
+            const userID = await authProcs.refreshTokenVerify(continueWithRefreshToken, req.ip);
+
+            if(!userID || userID <= 0){
+                response.set(401, false);
+                return await response.sendResponse(res);
+            }
+
+            const user = await Auth.data.findOne({
                 where: {
-                    projectId: projectId
+                    userId: userID
                 }
             });
 
-            if(!project){
-                errors.push('ProjectId is invalid.');
-            }
-        }    
+            if(!user){
+                response.set(401, false);
+                return await response.sendResponse(res);
+            }            
+
+            email = user.email;
+            projectId = user.projectId;
+            byPassword = false;
+        }                
 
         // ----- Check for errors
         if(errors && errors.length > 0){
@@ -345,7 +390,7 @@ router.post('/login', async (req, res) => {
             response.set(404, false);
             return await response.sendResponse(res);
         }
-        else {
+        else if(byPassword) {
             let checkPassword = await bcrypt.compare(password, user.password);
             if(!checkPassword){
                 response.set(401, false);
@@ -367,7 +412,7 @@ router.post('/login', async (req, res) => {
 
         let roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);
 
-        let secret = process.env.SECRET;
+        let secret = process.env.SECRET;        
         let token = jwt.sign({            
             id: user.userId,
             userEmail: user.email,
@@ -376,15 +421,22 @@ router.post('/login', async (req, res) => {
         },
         secret,
         {
-            expiresIn: '1h'
-        });
+            expiresIn: process.env.JWT_ACCESS_EXPIRATION + 'm'
+        });        
 
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 1);
+        const accessExpiresAt = new Date();
+        const refreshExpiresAt = new Date();
+
+        accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
+        refreshExpiresAt.setMinutes(refreshExpiresAt.getMinutes() + parseInt(process.env.JWT_REFRESH_EXPIRATION));
+
+        const refresh = await authProcs.refreshTokenCreate(user.userId, refreshExpiresAt, req.ip);
 
         const result = {
             accessToken: token,
-            expiresAt: expiresAt
+            accessExpiredAt: accessExpiresAt,
+            refreshToken: refresh,
+            refreshExpiredAt: refreshExpiresAt
         };
 
         response.set(200, true, null, result);

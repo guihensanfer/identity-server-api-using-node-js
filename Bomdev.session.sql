@@ -130,7 +130,61 @@ BEGIN
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END
 
-select * from ProcedureStatistics where ticket='14a9fa0e-b37e-442e-a7aa-c20fd1792e42' order by execution_date desc
+
+drop table if exists UserRefreshToken
+CREATE TABLE UserRefreshToken (
+    userRefreshTokenId INT AUTO_INCREMENT PRIMARY KEY,
+    userID int NOT NULL,
+    token varchar(50) NOT NULL,
+    expiredAt TIMESTAMP NOT NULL,
+    requestIp varchar(50) null,
+
+    INDEX (requestIp, token),
+
+    FOREIGN KEY (userID) REFERENCES Users(userID)
+);
+
+drop procedure USP_UserRefreshToken_Insert
+CREATE PROCEDURE USP_UserRefreshToken_Insert (
+    IN p_userID INT,
+    IN p_requestIP VARCHAR(50) ,
+    IN p_expiredAt    TIMESTAMP
+)
+BEGIN
+    DECLARE newToken char(40);
+
+    set newToken = UUID();
+
+    DELETE FROM UserRefreshToken WHERE userID = p_userID;
+
+    INSERT INTO UserRefreshToken (userID, token, expiredAt, requestIp)
+    VALUES (p_userID, newToken, p_expiredAt, p_requestIP);
+
+    DELETE FROM UserRefreshToken
+    WHERE expiredAt < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+
+    select newToken as result;
+END
+
+drop procedure USP_UserRefreshToken_Check
+CREATE PROCEDURE USP_UserRefreshToken_Check (
+    IN p_token VARCHAR(50),    
+    IN p_requestIP VARCHAR(50)
+)
+BEGIN
+    select userID as result from UserRefreshToken 
+    where token = p_token 
+    and requestIp = IFNULL(p_requestIP, requestIp)
+    and expiredAt > NOW() LIMIT 1;
+END
+
+
+select * from ProcedureStatistics 
+order by execution_date desc
 select * from ErrorLogs order by errortime desc
 
 truncate table ProcedureStatistics
+
+select * from UserRefreshToken
+
+call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');

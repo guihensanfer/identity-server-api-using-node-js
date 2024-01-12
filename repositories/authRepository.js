@@ -75,10 +75,28 @@ class Procs extends idb{
 
   async checkUserExists(email = null, projectId = null) {
     try {
-      let res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId], this.ticket);
+      const res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId], this.ticket);
       return res[0][0][0].result > 0;
     } catch {
       return false;
+    }
+  }
+
+  async refreshTokenCreate(userId, expiredAt, requestIp = null) {
+    try {
+      const res = await db.executeProcedure('USP_UserRefreshToken_Insert', [userId, requestIp, expiredAt], this.ticket);
+      return res[0][0][0].result;
+    } catch {
+      return null;
+    }
+  }
+
+  async refreshTokenVerify(token, requestIp = null) {
+    try {
+      const res = await db.executeProcedure('USP_UserRefreshToken_Check', [token, requestIp], this.ticket);
+      return res[0][0][0].result;
+    } catch {
+      return null;
     }
   }
 }
