@@ -84,7 +84,7 @@ class Procs extends idb{
 
   async refreshTokenCreate(userId, expiredAt, requestIp = null) {
     try {
-      const res = await db.executeProcedure('USP_UserRefreshToken_Insert', [userId, requestIp, expiredAt], this.ticket);
+      const res = await db.executeProcedure('USP_UserToken_Insert', [userId, requestIp, expiredAt], this.ticket);
       return res[0][0][0].result;
     } catch {
       return null;
@@ -93,7 +93,7 @@ class Procs extends idb{
 
   async refreshTokenVerify(token, requestIp = null) {
     try {
-      const res = await db.executeProcedure('USP_UserRefreshToken_Check', [token, requestIp], this.ticket);
+      const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp], this.ticket);
       return res[0][0][0].result;
     } catch {
       return null;

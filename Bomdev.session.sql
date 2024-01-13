@@ -131,9 +131,9 @@ BEGIN
 END
 
 
-drop table if exists UserRefreshToken
-CREATE TABLE UserRefreshToken (
-    userRefreshTokenId INT AUTO_INCREMENT PRIMARY KEY,
+drop table if exists UserToken
+CREATE TABLE UserToken (
+    userTokenId INT AUTO_INCREMENT PRIMARY KEY,
     userID int NOT NULL,
     token varchar(50) NOT NULL,
     expiredAt TIMESTAMP NOT NULL,
@@ -144,8 +144,8 @@ CREATE TABLE UserRefreshToken (
     FOREIGN KEY (userID) REFERENCES Users(userID)
 );
 
-drop procedure USP_UserRefreshToken_Insert
-CREATE PROCEDURE USP_UserRefreshToken_Insert (
+drop procedure USP_UserToken_Insert
+CREATE PROCEDURE USP_UserToken_Insert (
     IN p_userID INT,
     IN p_requestIP VARCHAR(50) ,
     IN p_expiredAt    TIMESTAMP
@@ -153,38 +153,36 @@ CREATE PROCEDURE USP_UserRefreshToken_Insert (
 BEGIN
     DECLARE newToken char(40);
 
-    set newToken = UUID();
+    set newToken = UUID();    
 
-    DELETE FROM UserRefreshToken WHERE userID = p_userID;
-
-    INSERT INTO UserRefreshToken (userID, token, expiredAt, requestIp)
+    INSERT INTO UserToken (userID, token, expiredAt, requestIp)
     VALUES (p_userID, newToken, p_expiredAt, p_requestIP);
 
-    DELETE FROM UserRefreshToken
+    DELETE FROM UserToken
     WHERE expiredAt < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 
     select newToken as result;
 END
 
-drop procedure USP_UserRefreshToken_Check
-CREATE PROCEDURE USP_UserRefreshToken_Check (
+drop procedure USP_UserToken_Check
+CREATE PROCEDURE USP_UserToken_Check (
     IN p_token VARCHAR(50),    
     IN p_requestIP VARCHAR(50)
 )
 BEGIN
-    select userID as result from UserRefreshToken 
+    select userID as result from UserToken 
     where token = p_token 
     and requestIp = IFNULL(p_requestIP, requestIp)
     and expiredAt > NOW() LIMIT 1;
 END
 
 
-select * from ProcedureStatistics 
-order by execution_date desc
-select * from ErrorLogs order by errortime desc
+-- select * from ProcedureStatistics 
+-- order by execution_date desc
+-- select * from ErrorLogs order by errortime desc
 
-truncate table ProcedureStatistics
+-- truncate table ProcedureStatistics
 
-select * from UserRefreshToken
+-- select * from UserRefreshToken
 
-call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');
+-- call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');
