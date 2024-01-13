@@ -354,7 +354,7 @@ router.post('/login', async (req, res) => {
                 return await response.sendResponse(res);
             }
 
-            const userID = await authProcs.refreshTokenVerify(continueWithRefreshToken, req.ip);
+            const userID = await authProcs.userTokenVerify(continueWithRefreshToken, req.ip);
 
             if(!userID || userID <= 0){
                 response.set(401, false);
@@ -435,7 +435,7 @@ router.post('/login', async (req, res) => {
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
         refreshExpiresAt.setMinutes(refreshExpiresAt.getMinutes() + parseInt(process.env.JWT_REFRESH_EXPIRATION));
 
-        const refresh = await authProcs.refreshTokenCreate(user.userId, refreshExpiresAt, req.ip);
+        const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip);
 
         const result = {
             accessToken: token,
