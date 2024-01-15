@@ -82,9 +82,9 @@ class Procs extends idb{
     }
   }
 
-  async userTokenCreate(userId, expiredAt, requestIp = null) {
+  async userTokenCreate(userId, expiredAt, requestIp = null, processName = 'Default') {
     try {
-      const res = await db.executeProcedure('USP_UserToken_Insert', [userId, requestIp, expiredAt], this.ticket);
+      const res = await db.executeProcedure('USP_UserToken_Insert', [userId, requestIp, expiredAt, processName], this.ticket);
       return res[0][0][0].result;
     } catch {
       return null;

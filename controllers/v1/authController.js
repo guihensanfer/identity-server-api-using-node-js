@@ -437,7 +437,7 @@ router.post('/login', async (req, res) => {
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
         refreshExpiresAt.setMinutes(refreshExpiresAt.getMinutes() + parseInt(process.env.JWT_REFRESH_EXPIRATION));
 
-        const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip);
+        const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip, 'REFRESH_TOKEN');
 
         const result = {
             accessToken: token,
@@ -614,7 +614,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
         const accessExpiresAt = new Date();        
 
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
-        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip);
+        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'FORGET_PASSWORD');
         
         if(!token){
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));

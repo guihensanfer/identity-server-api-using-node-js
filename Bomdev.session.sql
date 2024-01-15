@@ -138,6 +138,7 @@ CREATE TABLE UserToken (
     token varchar(50) NOT NULL,
     expiredAt TIMESTAMP NOT NULL,
     requestIp varchar(50) null,
+    processName varchar(50) null
 
     INDEX (requestIp, token),
 
@@ -148,15 +149,16 @@ drop procedure USP_UserToken_Insert
 CREATE PROCEDURE USP_UserToken_Insert (
     IN p_userID INT,
     IN p_requestIP VARCHAR(50) ,
-    IN p_expiredAt    TIMESTAMP
+    IN p_expiredAt    TIMESTAMP,
+    IN p_processName varchar(50)
 )
 BEGIN
     DECLARE newToken char(40);
 
     set newToken = UUID();    
 
-    INSERT INTO UserToken (userID, token, expiredAt, requestIp)
-    VALUES (p_userID, newToken, p_expiredAt, p_requestIP);
+    INSERT INTO UserToken (userID, token, expiredAt, requestIp, processName)
+    VALUES (p_userID, newToken, p_expiredAt, p_requestIP, p_processName);
 
     DELETE FROM UserToken
     WHERE expiredAt < DATE_SUB(NOW(), INTERVAL 6 MONTH);
@@ -220,3 +222,5 @@ select * from Roles
 update UsersRoles set roleId = 1 where userId = 1
 
 select * from EmailLogs
+
+SELECT * FROM UserToken order by userTokenId desc
