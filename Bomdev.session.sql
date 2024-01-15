@@ -174,15 +174,49 @@ BEGIN
     where token = p_token 
     and requestIp = IFNULL(p_requestIP, requestIp)
     and expiredAt > NOW() LIMIT 1;
+
+    delete from UserToken where token = p_token;
 END
+
+CREATE TABLE IF NOT EXISTS EmailLogs (
+    emailLogId INT AUTO_INCREMENT PRIMARY KEY,
+    to_address VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body LONGTEXT NOT NULL,
+    try_sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    projectId int not null,
+    successfully bit,
+    result_object JSON,
+
+    FOREIGN KEY (projectId) REFERENCES Projects(projectId)
+);
+
+drop procedure if exists USP_InsertEmailLog
+CREATE PROCEDURE USP_InsertEmailLog(IN p_to_address VARCHAR(255), IN p_subject VARCHAR(255), IN p_body LONGTEXT, IN p_projectId int, p_result_object JSON, p_successfully bit)
+BEGIN
+    INSERT INTO EmailLogs (to_address, subject, body, projectid, result_object, successfully)
+    VALUES (p_to_address, p_subject, p_body, p_projectId, p_result_object, p_successfully);
+
+    DELETE FROM EmailLogs
+    WHERE try_sent_at < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+END 
+
 
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc
--- select * from ErrorLogs order by errortime desc
+select * from ErrorLogs order by errortime desc
 
 -- truncate table ProcedureStatistics
 
 -- select * from UserRefreshToken
 
 -- call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');
+
+select * from Users
+select * from UsersRoles where userId=1
+select * from Roles
+
+update UsersRoles set roleId = 1 where userId = 1
+
+select * from EmailLogs

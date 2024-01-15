@@ -36,7 +36,7 @@ class Procs extends idb{
                 return parseInt(value);
             }
     
-            return 0
+            return 0;
         }
         catch{
             return 0;

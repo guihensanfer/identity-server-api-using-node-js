@@ -1,4 +1,14 @@
 const _ = require('lodash');
+const url = require('url');
+
+function isValidURI(uri) {
+  try {
+    new URL(uri);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
 function extractNumbers(value) {  
   const numbersOnly = value.replace(/\D/g, '');
@@ -50,5 +60,6 @@ module.exports = {
     getParameterType,
     formatJSON,
     isValidEmail,
-    extractNumbers
+    extractNumbers,
+    isValidURI
 }
