@@ -463,8 +463,8 @@ router.post('/login', async (req, res) => {
  * @swagger
  * /auth/forgetpassword:
  *   post:
- *     summary: Log in.
- *     description: Log in an user.
+ *     summary: Callback url for reset
+ *     description: Generate and send secure email with password reset callback URL
  *     tags:
  *       - Auth
  *     requestBody:
@@ -478,15 +478,11 @@ router.post('/login', async (req, res) => {
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               password:
+ *               clientUrl:
  *                 type: string
- *                 maxLength: 300
+ *                 example: https://example.com.br
  *               projectId:
  *                 type: integer
- *               continueWithRefreshToken:
- *                 type: string
- *                 description: Use this parameter to continue with a refresh token. 1 After the log in, a new refresh token is generated. 2. To obtain a new access token using refresh token, send only the refresh token without including any additional attributes.
- *                 example: string // TODO If you have this, then send only the refresh token without including any additional attributes
  *     responses:
  *       '200':
  *         description: Log in was successfully.
@@ -512,20 +508,15 @@ router.post('/login', async (req, res) => {
  *                 data:
  *                   type: object
  *                   properties:
- *                     accessToken:
+ *                     token:
  *                       type: string
- *                       description: User authentication token
- *                     expiredAccessAt:
+ *                       description: User token to reset password
+ *                     email:
  *                       type: string
- *                       format: date-time
- *                       description: Access token expiration date and time
- *                     refreshToken:
+ *                       description: User email
+ *                     callbackUrl:
  *                       type: string
- *                       description: Use the refresh token for seamless future authentication. If you wish to utilize the refresh token for logging in, include only the refresh token in your request.
- *                     expiredRefreshAt:
- *                       type: string
- *                       format: date-time
- *                       description: Refresh token expiration date and time
+ *                       description: The result callback url
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -541,7 +532,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId, clientUri
+        email, projectId, clientUrl
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -581,13 +572,13 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
             }
         }
 
-        // ClientUri
-        if(_.isNull(clientUri) || _.isEmpty(clientUri)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ClientUri'));            
+        // clientUrl
+        if(_.isNull(clientUrl) || _.isEmpty(clientUrl)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUrl'));            
         }
-        else if(!util.isValidURI(clientUri))
+        else if(!util.isValidURI(clientUrl))
         {
-            errors.push('ClientUri is invalid.');
+            errors.push('clientUrl is invalid.');
         }
 
         // ----- Check for errors
@@ -625,7 +616,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
         };
 
         const callbackUrl = url.format({
-            pathname: clientUri,
+            pathname: clientUrl,
             query: queryParams
         });
 
