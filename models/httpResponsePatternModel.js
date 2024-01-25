@@ -3,6 +3,7 @@ const DEFAULT_PAGE = 1;
 const PAGE_SIZE = 15;
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
+const RolesModel = require('./rolesModel');
 
 class HTTPResponsePatternModel{
     constructor(){
@@ -125,6 +126,15 @@ class HTTPResponsePatternModel{
             return fnUnauthorized();
           }
         };
+    }
+
+    static authWithAdminGroup(){
+      const adminGroup = [
+        RolesModel.ROLE_ADMINISTRATOR, 
+        RolesModel.ROLE_APPLICATION
+      ];
+
+      return HTTPResponsePatternModel.auth(adminGroup);
     }
 
 

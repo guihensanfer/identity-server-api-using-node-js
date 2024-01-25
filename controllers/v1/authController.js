@@ -40,6 +40,8 @@ const url = require('url');
  *                 type: string
  *                 format: email
  *                 maxLength: 200
+ *               projectId:
+ *                 type: integer
  *               password:
  *                 type: string
  *                 maxLength: 300
@@ -56,12 +58,12 @@ const url = require('url');
  *                 type: string
  *                 example: pt-br
  *                 maxLength: 50
- *               projectId:
- *                 type: integer
  *             required:
  *               - firstName
  *               - email
  *               - projectId
+ *     security:
+ *       - JWT: []
  *     responses:
  *       '201':
  *         description: User successfully created.
@@ -72,7 +74,7 @@ const url = require('url');
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/register', async (req, res) => {      
+router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
@@ -235,11 +237,11 @@ router.post('/register', async (req, res) => {
  *                 type: string
  *                 format: email
  *                 maxLength: 200
+ *               projectId:
+ *                 type: integer
  *               password:
  *                 type: string
  *                 maxLength: 300
- *               projectId:
- *                 type: integer
  *               continueWithRefreshToken:
  *                 type: string
  *                 description: Use this parameter to continue with a refresh token. 1 After the log in, a new refresh token is generated. 2. To obtain a new access token using refresh token, send only the refresh token without including any additional attributes.
@@ -464,7 +466,7 @@ router.post('/login', async (req, res) => {
  * /auth/forgetpassword:
  *   post:
  *     summary: Callback url for reset
- *     description: Generate and send secure email with password reset callback URL
+ *     description: Generate and send an email with password reset callback URL
  *     tags:
  *       - Auth
  *     requestBody:
@@ -478,14 +480,16 @@ router.post('/login', async (req, res) => {
  *                 type: string
  *                 format: email
  *                 maxLength: 200
+ *               projectId:
+ *                 type: integer
  *               clientUrl:
  *                 type: string
  *                 example: https://example.com.br
- *               projectId:
- *                 type: integer
+ *     security:
+ *       - JWT: []
  *     responses:
  *       '200':
- *         description: Log in was successfully.
+ *         description: The "forget password" operation has been successfully completed, an email containing a callback URL will be sent to user.
  *         content:
  *           application/json:
  *             schema:
@@ -496,10 +500,11 @@ router.post('/login', async (req, res) => {
  *                   description: The ticket of the request
  *                 message:
  *                   type: string
- *                   description: Message indicating successful login
+ *                   description: Message indicating successful operation
  *                 success:
  *                   type: boolean
- *                   description: Indicates if the login was successful
+ *                   description: Indicates if the operation was successful
+ *                   example: true
  *                 errors:
  *                   type: array
  *                   items:
@@ -507,16 +512,7 @@ router.post('/login', async (req, res) => {
  *                   description: List of errors (null in case of success)
  *                 data:
  *                   type: object
- *                   properties:
- *                     token:
- *                       type: string
- *                       description: User token to reset password
- *                     email:
- *                       type: string
- *                       description: User email
- *                     callbackUrl:
- *                       type: string
- *                       description: The result callback url
+ *                   example: null
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -528,7 +524,7 @@ router.post('/login', async (req, res) => {
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.ROLE_ADMINISTRATOR, RolesModel.ROLE_APPLICATION]), async (req, res) => {    
+router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
     var { 
@@ -627,15 +623,16 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
             html: 'You forgot your password of application the ' + projectId + '.</br><a href="' + callbackUrl + '">Click here</a> to change the password.</br></br>Bomdev Software House'
         };
 
-        const result = {
-            token: token,
-            email: email,
-            callbackUrl: callbackUrl
-        };
+        // I prefer not to show the token in the request; it's sounds more secure to me
+        // const result = {
+        //     token: token,
+        //     email: email,
+        //     callbackUrl: callbackUrl
+        // };
 
         mail.sendEmail(mailOptions, projectId);
 
-        response.set(200, true, null, result);
+        response.set(200, true, null, null);
         return await response.sendResponse(res);
     }
     catch(err){                 
@@ -672,6 +669,8 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
  *                 example: https://example.com.br
  *               projectId:
  *                 type: integer
+ *     security:
+ *       - JWT: []
  *     responses:
  *       '200':
  *         description: Log in was successfully.
@@ -717,11 +716,11 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.R
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/resetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.ROLE_ADMINISTRATOR, RolesModel.ROLE_APPLICATION]), async (req, res) => {    
+router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId, clientUrl
+        token, newPassword
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -734,16 +733,19 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.RO
             return await response.sendResponse(res);
         }
         
-         // Email
-         if(_.isNull(email) || _.isEmpty(email)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
+         // Token
+         if(_.isNull(token) || _.isEmpty(token)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Token'));            
         }
-        else if(email.length > Auth.MAX_EMAIL_LENGTH){
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
+       
+        
+         // newPassword
+         if(_.isNull(newPassword) || _.isEmpty(newPassword)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('newPassword'));            
         }
-        else if(!util.isValidEmail(email)){
-            errors.push('Valid email is required.');
-        }          
+        else if(newPassword.length > Auth.MAX_PASSWORD_LENGTH){
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('newPassword'));               
+        }
 
         // ProjectId
         if(!projectId){
@@ -794,7 +796,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.auth([RolesModel.RO
         const accessExpiresAt = new Date();        
 
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
-        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'FORGET_PASSWORD');
+        const checkToken = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'FORGET_PASSWORD');
         
         if(!token){
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));

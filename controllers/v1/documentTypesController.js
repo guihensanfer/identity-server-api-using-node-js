@@ -57,7 +57,7 @@ const httpP = require('../../models/httpResponsePatternModel');
  *       '404':
  *         description: Page not found.
  */
-router.get('/get-all', httpP.HTTPResponsePatternModel.auth(['ADMIN', 'USER']), async (req, res) => {   
+router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {   
     let response = new httpP.HTTPResponsePatternModel();
     const currentTicket = response.getTicket();          
     const { page } = req.query;

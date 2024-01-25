@@ -12,6 +12,8 @@ const httpP = require('../../models/httpResponsePatternModel');
  *     description: Get all solution projects.
  *     tags:
  *       - Projects
+ *     security:
+ *       - JWT: []
  *     responses:
  *       '200':
  *         description: Success.
@@ -47,7 +49,7 @@ const httpP = require('../../models/httpResponsePatternModel');
  *                 totalPages:
  *                   type: integer
  */
-router.get('/get-all', async (req, res) => {
+router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
     let response = new httpP.HTTPResponsePatternModel();
     const currentTicket = response.getTicket();        
     const { page } = req.query;
