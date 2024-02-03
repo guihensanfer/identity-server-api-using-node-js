@@ -55,6 +55,11 @@ const data = db._sequealize.define('Users', {
       type: Sequelize.STRING(MAX_LANGUAGE_LENGTH),
       allowNull: true,
   },
+  emailConfirmed:{
+    type:Sequelize.BOOLEAN,
+    allowNull: true,
+    defaultValue: 0
+  }
 }, {
   indexes: [
       {

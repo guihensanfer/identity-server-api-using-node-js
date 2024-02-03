@@ -115,9 +115,9 @@ app.use('/api/v1/projects', projectsController);
     const Roles = require('./repositories/rolesRepository');
     const UsersRoles = require('./repositories/usersRolesRepository');
 
-    await db._sequealize.sync();
-    
-    Projects.data.findCreateFind({
+    await db._sequealize.sync({force:true});    
+
+    await Projects.data.findCreateFind({
         where: {
             name: 'Default'
         },
@@ -126,7 +126,7 @@ app.use('/api/v1/projects', projectsController);
             description: 'Default'
         }
     });
-    Projects.data.findCreateFind({
+    await Projects.data.findCreateFind({
         where: {
             name: 'REP'
         },
@@ -136,7 +136,7 @@ app.use('/api/v1/projects', projectsController);
         }
     });
 
-    DocumentTypes.data.findCreateFind({
+    await DocumentTypes.data.findCreateFind({
         where: {
             name: 'CPF'
         },
@@ -145,7 +145,7 @@ app.use('/api/v1/projects', projectsController);
             description: 'Cadastro de Pessoas Física'
         }
     });
-    DocumentTypes.data.findCreateFind({
+    await DocumentTypes.data.findCreateFind({
         where: {
             name: 'CNPJ'
         },
@@ -155,7 +155,7 @@ app.use('/api/v1/projects', projectsController);
         }
     });
 
-    Roles.data.findCreateFind({
+    await Roles.data.findCreateFind({
         where: {
             name: RolesModel.ROLE_ADMINISTRATOR
         },
@@ -164,7 +164,7 @@ app.use('/api/v1/projects', projectsController);
             description: RolesModel.ROLE_ADMINISTRATOR
         }
     });
-    Roles.data.findCreateFind({
+    await Roles.data.findCreateFind({
         where: {
             name: RolesModel.ROLE_APPLICATION
         },
@@ -173,7 +173,7 @@ app.use('/api/v1/projects', projectsController);
             description: RolesModel.ROLE_APPLICATION
         }
     });
-    Roles.data.findCreateFind({
+    await Roles.data.findCreateFind({
         where: {
             name: RolesModel.ROLE_USER
         },

@@ -130,7 +130,6 @@ BEGIN
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END
 
-
 drop table if exists UserToken
 CREATE TABLE UserToken (
     userTokenId INT AUTO_INCREMENT PRIMARY KEY,
@@ -138,7 +137,7 @@ CREATE TABLE UserToken (
     token varchar(50) NOT NULL,
     expiredAt TIMESTAMP NOT NULL,
     requestIp varchar(50) null,
-    processName varchar(50) null
+    processName varchar(50) null,
 
     INDEX (requestIp, token),
 
@@ -180,6 +179,7 @@ BEGIN
     delete from UserToken where token = p_token;
 END
 
+drop table if exists EmailLogs
 CREATE TABLE IF NOT EXISTS EmailLogs (
     emailLogId INT AUTO_INCREMENT PRIMARY KEY,
     to_address VARCHAR(255) NOT NULL,
@@ -214,10 +214,13 @@ select * from ErrorLogs order by errortime desc
 -- select * from UserRefreshToken
 
 -- call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');
+-- SET foreign_key_checks = 0;
+-- drop table Users
+-- SET foreign_key_checks = 1;
 
 select * from Users
 select * from UsersRoles where userId=1
-select * from Roles
+select * from Projects
 
 update UsersRoles set roleId = 1 where userId = 1
 

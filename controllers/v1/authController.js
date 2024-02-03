@@ -74,7 +74,8 @@ const url = require('url');
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
+//router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
+router.post('/register', async (req, res) => {      
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
@@ -399,6 +400,10 @@ router.post('/login', async (req, res) => {
             response.set(404, false);
             return await response.sendResponse(res);
         }
+        else if(!user.emailConfirmed){
+            response.set(401, false, null, null, "Email is not confirmed.");
+            return await response.sendResponse(res);
+        }
         else if(byPassword) {
             let checkPassword = await bcrypt.compare(password, user.password);
             if(!checkPassword){
@@ -660,20 +665,16 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *           schema:
  *             type: object
  *             properties:
- *               email:
+ *               token:
  *                 type: string
- *                 format: email
- *                 maxLength: 200
- *               clientUrl:
+ *               newPassword:
  *                 type: string
- *                 example: https://example.com.br
- *               projectId:
- *                 type: integer
+ *                 maxLength: 300
  *     security:
  *       - JWT: []
  *     responses:
  *       '200':
- *         description: Log in was successfully.
+ *         description: Reset password was successfully.
  *         content:
  *           application/json:
  *             schema:
@@ -684,10 +685,10 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *                   description: The ticket of the request
  *                 message:
  *                   type: string
- *                   description: Message indicating successful login
+ *                   description: Message indicating successful operation
  *                 success:
  *                   type: boolean
- *                   description: Indicates if the login was successful
+ *                   description: Indicates if the operation was successful
  *                 errors:
  *                   type: array
  *                   items:
@@ -695,16 +696,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *                   description: List of errors (null in case of success)
  *                 data:
  *                   type: object
- *                   properties:
- *                     token:
- *                       type: string
- *                       description: User token to reset password
- *                     email:
- *                       type: string
- *                       description: User email
- *                     callbackUrl:
- *                       type: string
- *                       description: The result callback url
+ *                   example: null
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -745,32 +737,8 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }
         else if(newPassword.length > Auth.MAX_PASSWORD_LENGTH){
             errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('newPassword'));               
-        }
-
-        // ProjectId
-        if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
-        }
-        else{
-            let project = await Projects.data.findOne({
-                where: {
-                    projectId: projectId
-                }
-            });
-
-            if(!project){
-                errors.push('ProjectId is invalid.');
-            }
-        }
-
-        // clientUrl
-        if(_.isNull(clientUrl) || _.isEmpty(clientUrl)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUrl'));            
-        }
-        else if(!util.isValidURI(clientUrl))
-        {
-            errors.push('clientUrl is invalid.');
-        }
+        }        
+       
 
         // ----- Check for errors
         if(errors && errors.length > 0){
@@ -778,11 +746,18 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
             return await response.sendResponse(res);
         }
     
+        // Check token
+        const _userID = await authProcs.userTokenVerify(token, req.ip);
+
+        if(!_userID || _userID <= 0){
+            response.set(401, false);
+            return await response.sendResponse(res);
+        }
+
         // Check user
         let user = await Auth.data.findOne({
             where: {
-                email: email,
-                projectId: projectId
+                userId: _userID
             }
         });
 
@@ -791,42 +766,18 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
             return await response.sendResponse(res);
         }        
 
-        // Create token
+        // Create password
+        let salt = await bcrypt.genSaltSync(12);
+        let passwordHash = await bcrypt.hashSync(newPassword, salt);
 
-        const accessExpiresAt = new Date();        
+        Auth.data.update({
+            password: passwordHash
+        }, {
+            where: {
+                userId:_userID
+        }});      
 
-        accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
-        const checkToken = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'FORGET_PASSWORD');
-        
-        if(!token){
-            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
-        }
-        const queryParams = {
-            token: token,
-            email: email
-        };
-
-        const callbackUrl = url.format({
-            pathname: clientUrl,
-            query: queryParams
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,            
-            subject: 'Forget password - Application ' + projectId + ', Bomdev',
-            html: 'You forgot your password of application the ' + projectId + '.</br><a href="' + callbackUrl + '">Click here</a> to change the password.</br></br>Bomdev Software House'
-        };
-
-        const result = {
-            token: token,
-            email: email,
-            callbackUrl: callbackUrl
-        };
-
-        mail.sendEmail(mailOptions, projectId);
-
-        response.set(200, true, null, result);
+        response.set(200, true, null, null);
         return await response.sendResponse(res);
     }
     catch(err){                 
