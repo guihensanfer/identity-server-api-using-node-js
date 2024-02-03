@@ -203,7 +203,7 @@ BEGIN
     WHERE try_sent_at < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END 
 
-
+alter table Users add emailConfirmed bit default 0;
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc
@@ -218,12 +218,34 @@ select * from ErrorLogs order by errortime desc
 -- drop table Users
 -- SET foreign_key_checks = 1;
 
+select * from UsersRoles where userId = 2
+select * from ErrorLogs
+
+truncate table Users
+truncate table ErrorLogs
+
 select * from Users
 select * from UsersRoles where userId=1
-select * from Projects
 
-update UsersRoles set roleId = 1 where userId = 1
+select * from Projects
 
 select * from EmailLogs
 
 SELECT * FROM UserToken order by userTokenId desc
+
+SHOW ENGINE INNODB STATUS;
+SHOW CREATE TABLE ErrorLogs;
+
+SHOW CREATE TABLE ErrorLogs;
+
+
+update Users set emailConfirmed=1 where userId=1
+update UsersRoles set roleId = 1 where userId = 1
+
+
+
+----------
+
+select * from EmailLogs order by emailLogId desc
+
+You forgot your password of application the 2.</br><a href="https://example.com.br?token=32919c4b-c2dd-11ee-947f-e768505ad10a&email=guihensanfer%40gmail.com">Click here</a> to change the password.</br></br>Bomdev Software House

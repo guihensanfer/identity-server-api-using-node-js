@@ -752,25 +752,14 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         if(!_userID || _userID <= 0){
             response.set(401, false);
             return await response.sendResponse(res);
-        }
-
-        // Check user
-        let user = await Auth.data.findOne({
-            where: {
-                userId: _userID
-            }
-        });
-
-        if(!user){
-            response.set(404, false);
-            return await response.sendResponse(res);
-        }        
+        }         
 
         // Create password
         let salt = await bcrypt.genSaltSync(12);
         let passwordHash = await bcrypt.hashSync(newPassword, salt);
 
-        Auth.data.update({
+        // Update the password
+        await Auth.data.update({
             password: passwordHash
         }, {
             where: {

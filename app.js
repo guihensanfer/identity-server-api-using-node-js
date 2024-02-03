@@ -115,7 +115,7 @@ app.use('/api/v1/projects', projectsController);
     const Roles = require('./repositories/rolesRepository');
     const UsersRoles = require('./repositories/usersRolesRepository');
 
-    await db._sequealize.sync({force:true});    
+    await db._sequealize.sync();    
 
     await Projects.data.findCreateFind({
         where: {

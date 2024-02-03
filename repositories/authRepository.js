@@ -57,7 +57,7 @@ const data = db._sequealize.define('Users', {
   },
   emailConfirmed:{
     type:Sequelize.BOOLEAN,
-    allowNull: true,
+    allowNull: false,
     defaultValue: 0
   }
 }, {
