@@ -204,6 +204,7 @@ BEGIN
 END 
 
 alter table Users add emailConfirmed bit default 0;
+alter table Users add enabled bit default 1;
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc
@@ -247,5 +248,3 @@ update UsersRoles set roleId = 1 where userId = 1
 ----------
 
 select * from EmailLogs order by emailLogId desc
-
-You forgot your password of application the 2.</br><a href="https://example.com.br?token=32919c4b-c2dd-11ee-947f-e768505ad10a&email=guihensanfer%40gmail.com">Click here</a> to change the password.</br></br>Bomdev Software House

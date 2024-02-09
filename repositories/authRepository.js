@@ -59,7 +59,12 @@ const data = db._sequealize.define('Users', {
     type:Sequelize.BOOLEAN,
     allowNull: false,
     defaultValue: 0
-  }
+  },
+  enabled:{
+    type:Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: 1
+  },
 }, {
   indexes: [
       {
