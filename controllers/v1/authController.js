@@ -400,6 +400,10 @@ router.post('/login', async (req, res) => {
             response.set(404, false);
             return await response.sendResponse(res);
         }
+        else if(!user.enabled){
+            response.set(401, false, null, null, "The account is locked out.");
+            return await response.sendResponse(res);
+        }
         else if(!user.emailConfirmed){
             response.set(401, false, null, null, "Email is not confirmed.");
             return await response.sendResponse(res);

@@ -248,3 +248,5 @@ update UsersRoles set roleId = 1 where userId = 1
 ----------
 
 select * from EmailLogs order by emailLogId desc
+
+update Users set enabled = 0
