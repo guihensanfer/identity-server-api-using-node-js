@@ -243,10 +243,10 @@ router.post('/register', async (req, res) => {
  *               password:
  *                 type: string
  *                 maxLength: 300
- *               continueWithRefreshToken:
+ *               continueWithToken:
  *                 type: string
- *                 description: Use this parameter to continue with a refresh token. 1 After the log in, a new refresh token is generated. 2. To obtain a new access token using refresh token, send only the refresh token without including any additional attributes.
- *                 example: string // TODO If you have this, then send only the refresh token without including any additional attributes
+ *                 description: Use this parameter to continue with a token. 1 After the log in, a new refresh token is generated. 2. To obtain a new access token using refresh token, send only the token without including any additional attributes.
+ *                 example: string // TODO If you have this, then send only the token without including any additional attributes
  *     responses:
  *       '200':
  *         description: Log in was successfully.
@@ -301,7 +301,7 @@ router.post('/login', async (req, res) => {
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
     var { 
-        email, password, projectId, continueWithRefreshToken
+        email, password, projectId, continueWithToken
     } = req.body;        
     let errors = [];
     const rolesProcs = new Roles.Procs(currentTicket);
@@ -316,7 +316,7 @@ router.post('/login', async (req, res) => {
             return await response.sendResponse(res);
         }
         
-        if(_.isNull(continueWithRefreshToken) || _.isEmpty(continueWithRefreshToken)){
+        if(_.isNull(continueWithToken) || _.isEmpty(continueWithToken)){
              // Email
             if(_.isNull(email) || _.isEmpty(email)){
                 errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
@@ -355,11 +355,11 @@ router.post('/login', async (req, res) => {
         else
         {
             if(email || password || projectId){
-                response.set(400, false, null, null, "Send only the refresh token without including any additional attributes.");
+                response.set(400, false, null, null, "Send only token without including any additional attributes.");
                 return await response.sendResponse(res);
             }
 
-            const userID = await authProcs.userTokenVerify(continueWithRefreshToken, req.ip);
+            const userID = await authProcs.userTokenVerify(continueWithToken, req.ip);
 
             if(!userID || userID <= 0){
                 response.set(401, false);
@@ -470,12 +470,16 @@ router.post('/login', async (req, res) => {
     } 
 });
 
+
+
+
+
 /**
  * @swagger
  * /auth/forgetpassword:
  *   post:
- *     summary: Callback url for reset
- *     description: Generate and send an email with password reset callback URL
+ *     summary: (FP1) Generate and send an email with a token to complete the reset password operation.
+ *     description: It is the first step, generate and send an email with a link to click and complete the reset password operation.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -658,8 +662,8 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  * @swagger
  * /auth/resetpassword:
  *   post:
- *     summary: Change user password.
- *     description: Using token in the /forgetpassword end point, set a new user password.
+ *     summary: (FP2) Change user password.
+ *     description: It is the last step after was using token in the /forgetpassword end point, now will set a new user password.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -769,6 +773,194 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
             where: {
                 userId:_userID
         }});      
+
+        response.set(200, true, null, null);
+        return await response.sendResponse(res);
+    }
+    catch(err){                 
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
+
+        await db.errorLogInsert(errorModel);
+      
+        response.set(500, false, [err.message]);
+        return await response.sendResponse(res);
+    } 
+});
+
+
+
+
+
+/**
+ * @swagger
+ * /auth/generateOTPFor2StepVerification:
+ *   post:
+ *     summary: Generate and send an email with a token to complete the 2-step authentication.
+ *     description: It is the first step, generate and send an email with a token to complete the 2-step authentication. Then, use end point /login to compe token to completelly the authentication.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 maxLength: 200
+ *               projectId:
+ *                 type: integer
+ *               clientUrl:
+ *                 type: string
+ *                 example: https://example.com.br
+ *     security:
+ *       - JWT: []
+ *     responses:
+ *       '200':
+ *         description: The "generateOTPFor2StepVerification" operation has been successfully completed, an email containing a callback URL will be sent to user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ticket:
+ *                   type: string
+ *                   description: The ticket of the request
+ *                 message:
+ *                   type: string
+ *                   description: Message indicating successful operation
+ *                 success:
+ *                   type: boolean
+ *                   description: Indicates if the operation was successful
+ *                   example: true
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: List of errors (null in case of success)
+ *                 data:
+ *                   type: object
+ *                   example: null
+ *       '400':
+ *         description: Bad request, verify your request data.
+ *       '422':
+ *         description: Unprocessable entity, the provided data is not valid.
+ *       '404':
+ *         description: User not found.
+ *       '401':
+ *         description: Log in unauthorized.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
+    let response = new httpP.HTTPResponsePatternModel();  
+    let currentTicket = response.getTicket(); 
+    var { 
+        email, projectId, clientUrl
+    } = req.body;        
+    let errors = [];    
+    const authProcs = new Auth.Procs(currentTicket);    
+
+    try
+    {  
+        if (Object.keys(req.body).length === 0) {
+            response.set(400,false);
+
+            return await response.sendResponse(res);
+        }
+        
+         // Email
+         if(_.isNull(email) || _.isEmpty(email)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
+        }
+        else if(email.length > Auth.MAX_EMAIL_LENGTH){
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
+        }
+        else if(!util.isValidEmail(email)){
+            errors.push('Valid email is required.');
+        }          
+
+        // ProjectId
+        if(!projectId){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
+        }
+        else{
+            let project = await Projects.data.findOne({
+                where: {
+                    projectId: projectId
+                }
+            });
+
+            if(!project){
+                errors.push('ProjectId is invalid.');
+            }
+        }
+
+        // clientUrl
+        if(_.isNull(clientUrl) || _.isEmpty(clientUrl)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUrl'));            
+        }
+        else if(!util.isValidURI(clientUrl))
+        {
+            errors.push('clientUrl is invalid.');
+        }
+
+        // ----- Check for errors
+        if(errors && errors.length > 0){
+            response.set(422, false, errors);
+            return await response.sendResponse(res);
+        }
+    
+        // Check user
+        let user = await Auth.data.findOne({
+            where: {
+                email: email,
+                projectId: projectId
+            }
+        });
+
+        if(!user){
+            response.set(404, false);
+            return await response.sendResponse(res);
+        }        
+
+        // Create token
+
+        const accessExpiresAt = new Date();        
+
+        accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
+        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OTPFor2Step');
+        
+        if(!token){
+            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
+        }
+        const queryParams = {
+            token: token,
+            email: email
+        };
+
+        const callbackUrl = url.format({
+            pathname: clientUrl,
+            query: queryParams
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,            
+            subject: 'Confirm your identity - Application ' + projectId + ', Bomdev',
+            html: 'Hi, please confirm your identity to complete log in in the ' + projectId + ' application. </br><a href="' + callbackUrl + '">Click here</a> to verify your identity.</br></br>Bomdev Software House'
+        };
+
+        // I not prefer to show the token in the request; it's sounds more secure to me
+        // const result = {
+        //     token: token,
+        //     email: email,
+        //     callbackUrl: callbackUrl
+        // };
+
+        mail.sendEmail(mailOptions, projectId);
 
         response.set(200, true, null, null);
         return await response.sendResponse(res);
