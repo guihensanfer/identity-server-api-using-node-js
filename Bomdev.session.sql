@@ -165,18 +165,38 @@ BEGIN
     select newToken as result;
 END
 
+call USP_UserToken_Check('b504254f-cbb3-42db-8107-8c7fd14cd048', '::1');
 drop procedure USP_UserToken_Check
 CREATE PROCEDURE USP_UserToken_Check (
     IN p_token VARCHAR(50),    
     IN p_requestIP VARCHAR(50)
 )
 BEGIN
-    select userID as result from UserToken 
-    where token = p_token 
-    and requestIp = IFNULL(p_requestIP, requestIp)
-    and expiredAt > NOW() LIMIT 1;
+    -- Tabela temporária para armazenar os resultados
+    CREATE TEMPORARY TABLE tempResult (
+        userId INT,
+        processName VARCHAR(50)
+    );
 
-    delete from UserToken where token = p_token;
+    -- Inserindo os dados correspondentes na tabela temporária
+    INSERT INTO tempResult (userId, processName)
+    SELECT userID, processName 
+    FROM UserToken 
+    WHERE token = p_token 
+    AND requestIp = IFNULL(p_requestIP, requestIp)
+    AND expiredAt > NOW()
+    LIMIT 1;
+
+    -- Selecionando o userId como resultado
+    SELECT userId AS result FROM tempResult;
+
+    -- Excluindo o token atual e outros tokens antigos semelhantes
+    DELETE ut
+    FROM UserToken ut
+    INNER JOIN tempResult tr ON ut.userId = tr.userId AND ut.processName = tr.processName;
+
+    -- Limpando a tabela temporária
+    DROP TEMPORARY TABLE IF EXISTS tempResult;
 END
 
 drop table if exists EmailLogs
@@ -220,7 +240,7 @@ select * from ErrorLogs order by errortime desc
 -- SET foreign_key_checks = 1;
 
 select * from UsersRoles where userId = 2
-select * from ErrorLogs
+select * from ErrorLogs order by errorID desc
 
 truncate table Users
 truncate table ErrorLogs
@@ -230,9 +250,13 @@ select * from UsersRoles where userId=1
 
 select * from Projects
 
-select * from EmailLogs
+select * from EmailLogs order by emaillogid desc
 
 SELECT * FROM UserToken order by userTokenId desc
+
+
+
+
 
 SHOW ENGINE INNODB STATUS;
 SHOW CREATE TABLE ErrorLogs;
@@ -241,6 +265,7 @@ SHOW CREATE TABLE ErrorLogs;
 
 
 update Users set emailConfirmed=1 where userId=1
+select * from Users 
 update UsersRoles set roleId = 1 where userId = 1
 
 
@@ -249,4 +274,5 @@ update UsersRoles set roleId = 1 where userId = 1
 
 select * from EmailLogs order by emailLogId desc
 
-update Users set enabled = 0
+update Users set enabled = 1
+

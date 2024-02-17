@@ -633,7 +633,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
             from: process.env.EMAIL_USER,
             to: email,            
             subject: 'Forget password - Application ' + projectId + ', Bomdev',
-            html: 'You forgot your password of application the ' + projectId + '.</br><a href="' + callbackUrl + '">Click here</a> to change the password.</br></br>Bomdev Software House'
+            html: 'You forgot your password of application the ' + projectId + '.</br><a href="' + callbackUrl + '">Click here</a> to change the password.</br></br>Expires at ' + accessExpiresAt.toString() + '</br></br>Bomdev Software House'
         };
 
         // I prefer not to show the token in the request; it's sounds more secure to me
@@ -796,7 +796,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  * /auth/generateOTPFor2StepVerification:
  *   post:
  *     summary: Generate and send an email with a token to complete the 2-step authentication.
- *     description: It is the first step, generate and send an email with a token to complete the 2-step authentication. Then, use end point /login to compe token to completelly the authentication.
+ *     description: It is the first step, generate and send an email with a token to complete the 2-step authentication. Then, use end point /login and pass the token to completelly the authentication.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -815,6 +815,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *               clientUrl:
  *                 type: string
  *                 example: https://example.com.br
+ *                 description: This URL will be utilized in the email. Upon clicking, it will be accompanied by a token.
  *     security:
  *       - JWT: []
  *     responses:
@@ -950,7 +951,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
             from: process.env.EMAIL_USER,
             to: email,            
             subject: 'Confirm your identity - Application ' + projectId + ', Bomdev',
-            html: 'Hi, please confirm your identity to complete log in in the ' + projectId + ' application. </br><a href="' + callbackUrl + '">Click here</a> to verify your identity.</br></br>Bomdev Software House'
+            html: 'Hi, please confirm your identity to complete log in in the ' + projectId + ' application. </br><a href="' + callbackUrl + '">Click here</a> to verify your identity.</br></br>Expires at ' + accessExpiresAt.toString() + '</br></br>Bomdev Software House'
         };
 
         // I not prefer to show the token in the request; it's sounds more secure to me
