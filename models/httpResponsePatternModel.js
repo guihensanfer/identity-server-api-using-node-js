@@ -82,6 +82,18 @@ class HTTPResponsePatternModel{
         });
     }
 
+    // Return corretly projectId by user role
+    // Validation to prevent unauthorized user requests to project IDs outside of their authorization
+    static verifyProjectId(req, bodyProjectId){
+      if(!req || !req.user || !req.user.projectId)
+        return false;
+
+      if(req.user.projectId == -1)
+        return bodyProjectId; // Super user can request for any projectId
+
+      return req.user.projectId; // For no super users can't request for any projectId
+    }
+
     static auth(roles) {
         return (req, res, next) => {
           let authHeader = req.headers['authorization'];          
@@ -111,15 +123,14 @@ class HTTPResponsePatternModel{
                 return fnUnauthorized();
               }
       
-              let userRoles = Array.isArray(decoded.roles) ? decoded.roles.flat() : [decoded.roles];
-      
-              let hasPermission = roles.some(role => userRoles.includes(role));
+              const userRoles = Array.isArray(decoded.roles) ? decoded.roles.flat() : [decoded.roles];    
+              const hasPermission = roles.some(role => userRoles.includes(role));
       
               if (!hasPermission) {
                 return fnUnauthorized();
               }
               
-              req.user = decoded;
+              req.user = decoded;              
               next();
             });
           } catch {
@@ -128,13 +139,8 @@ class HTTPResponsePatternModel{
         };
     }
 
-    static authWithAdminGroup(){
-      const adminGroup = [
-        RolesModel.ROLE_ADMINISTRATOR, 
-        RolesModel.ROLE_APPLICATION
-      ];
-
-      return HTTPResponsePatternModel.auth(adminGroup);
+    static authWithAdminGroup(){      
+      return HTTPResponsePatternModel.auth(RolesModel.adminGroup);
     }
 
 

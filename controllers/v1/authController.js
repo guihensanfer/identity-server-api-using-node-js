@@ -40,8 +40,6 @@ const url = require('url');
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               projectId:
- *                 type: integer
  *               password:
  *                 type: string
  *                 maxLength: 300
@@ -74,8 +72,8 @@ const url = require('url');
  *       '500':
  *         description: Internal Server Error.
  */
-//router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
-router.post('/register', async (req, res) => {      
+router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
+// router.post('/register', async (req, res) => {      
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
@@ -135,6 +133,8 @@ router.post('/register', async (req, res) => {
         }  
 
         // ProjectId
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
+
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
         }
@@ -147,7 +147,7 @@ router.post('/register', async (req, res) => {
 
             if(!project){
                 errors.push('ProjectId is invalid.');
-            }
+            }            
         }
 
         // defaultLanguage
@@ -422,19 +422,21 @@ router.post('/login', async (req, res) => {
             }
         });
 
-        let roleIds = userRoles.map(x => x.roleId);
+        const roleIds = userRoles.map(x => x.roleId);
 
         if(!userRoles || userRoles.length <= 0){
             throw new Error(httpP.HTTPResponsePatternModel.cannotGetMsg('User role'));
         }
 
-        let roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);
+        const roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);
+        const isSuperUser = roleNames.some(role => RolesModel.superUserGroup.includes(role));
 
         let secret = process.env.SECRET;        
         let token = jwt.sign({            
             id: user.userId,
             userEmail: user.email,
             userName: user.firstName,
+            projectId: isSuperUser ? -1 : user.projectId,
             roles: [roleNames]
         },
         secret,
@@ -493,8 +495,6 @@ router.post('/login', async (req, res) => {
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               projectId:
- *                 type: integer
  *               clientUrl:
  *                 type: string
  *                 example: https://example.com.br
@@ -566,6 +566,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         }          
 
         // ProjectId
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
         }
@@ -810,8 +811,6 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               projectId:
- *                 type: integer
  *               clientUrl:
  *                 type: string
  *                 example: https://example.com.br
@@ -884,6 +883,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         }          
 
         // ProjectId
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
         }

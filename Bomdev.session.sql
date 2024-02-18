@@ -239,7 +239,9 @@ select * from ErrorLogs order by errortime desc
 -- drop table Users
 -- SET foreign_key_checks = 1;
 
+select * from Roles
 select * from UsersRoles where userId = 2
+update UsersRoles set roleId=2
 select * from ErrorLogs order by errorID desc
 
 truncate table Users
@@ -265,7 +267,7 @@ SHOW CREATE TABLE ErrorLogs;
 
 
 update Users set emailConfirmed=1 where userId=1
-select * from Users 
+select * from UsersRoles 
 update UsersRoles set roleId = 1 where userId = 1
 
 
