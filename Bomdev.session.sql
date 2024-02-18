@@ -182,18 +182,20 @@ BEGIN
     INSERT INTO tempResult (userId, processName)
     SELECT userID, processName 
     FROM UserToken 
-    WHERE token = p_token 
+    WHERE token = p_token     
     AND requestIp = IFNULL(p_requestIP, requestIp)
-    AND expiredAt > NOW()
+    AND enabled = 1
+    AND expiredAt > NOW()    
     LIMIT 1;
 
     -- Selecionando o userId como resultado
     SELECT userId AS result FROM tempResult;
 
     -- Excluindo o token atual e outros tokens antigos semelhantes
-    DELETE ut
-    FROM UserToken ut
-    INNER JOIN tempResult tr ON ut.userId = tr.userId AND ut.processName = tr.processName;
+    UPDATE UserToken ut
+    INNER JOIN tempResult tr ON ut.userId = tr.userId AND ut.processName = tr.processName
+    SET ut.enabled = 0,
+        ut.disabledDate = NOW();
 
     -- Limpando a tabela temporária
     DROP TEMPORARY TABLE IF EXISTS tempResult;
@@ -225,6 +227,9 @@ END
 
 alter table Users add emailConfirmed bit default 0;
 alter table Users add enabled bit default 1;
+alter table UserToken add enabled bit not null default 1;
+alter table UserToken add disabledDate datetime null;
+alter table Users add picture varchar(200) null;
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc

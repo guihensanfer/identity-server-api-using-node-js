@@ -7,6 +7,7 @@ const MAX_PASSWORD_LENGTH = 300;
 const MAX_GUID_LENGTH = 40;
 const MAX_DOCUMENT_LENGTH = 50;
 const MAX_LANGUAGE_LENGTH = 50;
+const MAX_PICTURE_LENGTH = 200;
 const idb = require('../interfaces/idb');
 
 const data = db._sequealize.define('Users', {
@@ -65,6 +66,10 @@ const data = db._sequealize.define('Users', {
     allowNull: false,
     defaultValue: 1
   },
+  picture: {
+    type: Sequelize.STRING(MAX_PICTURE_LENGTH),
+    allowNull: true,
+  }
 }, {
   indexes: [
       {
@@ -121,5 +126,6 @@ module.exports = {
   MAX_PASSWORD_LENGTH,
   MAX_GUID_LENGTH,
   MAX_DOCUMENT_LENGTH,
-  MAX_LANGUAGE_LENGTH 
+  MAX_LANGUAGE_LENGTH ,
+  MAX_PICTURE_LENGTH
 }

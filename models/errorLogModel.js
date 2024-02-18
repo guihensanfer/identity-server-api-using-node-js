@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const _ = require('lodash');
 
 class ErrorLogModel {
     constructor(
@@ -22,13 +23,21 @@ class ErrorLogModel {
         this.ticket = ticket            
     }    
 
-    static DefaultForEndPoints(req, err, ticket = null) {        
+    static DefaultForEndPoints(req, err, ticket = null) {    
+        let errorDetails = req.body;
+
+        if(_.isNull(errorDetails) || _.isEmpty(errorDetails)){
+            if(err.response && err.response.data){
+                errorDetails = JSON.stringify(err.response.data);
+            }
+        }
+        
         return new ErrorLogModel(
             req.path,
-            0,
+            err.response.status ?? 0,
             3,
-            err.message + err.stack,
-            req.body ?? null,
+            (err.message ?? err.cause) + err.stack,
+            errorDetails,
             req.user ? req.user.id : null,
             req.ip,
             ticket ?? uuidv4()

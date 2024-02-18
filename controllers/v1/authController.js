@@ -13,7 +13,9 @@ const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
+const axios = require('axios');
 const url = require('url');
+const redirectUrl = process.env.APP_HOST + 'api/v1/auth/login/google/callback';
 
 /**
  * @swagger
@@ -43,6 +45,10 @@ const url = require('url');
  *               password:
  *                 type: string
  *                 maxLength: 300
+ *               picture:
+ *                 type: string
+ *                 example: Picture url
+ *                 maxLength: 200
  *               document:
  *                 type: object
  *                 properties:
@@ -76,7 +82,7 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
 // router.post('/register', async (req, res) => {      
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket(); 
-    var { firstName, lastName, document, email, password, projectId, defaultLanguage } = req.body;        
+    var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);
     const rolesProcs = new Roles.Procs(currentTicket);
@@ -155,7 +161,14 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
             if(defaultLanguage.length > Auth.MAX_LANGUAGE_LENGTH){
                 errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('DefaultLanguage'));                        
             }
-        }        
+        }     
+        
+         // picture
+         if(!_.isNull(picture) && !_.isEmpty(picture)){            
+            if(picture.length > Auth.MAX_PICTURE_LENGTH){
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Picture'));                        
+            }
+        }  
 
         // Check if user already exists
         let userExists = await authProcs.checkUserExists(email, projectId);
@@ -184,7 +197,8 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
             document: document.documentValue?.trim(),
             documentTypeId: document.documentTypeId,
             projectId: projectId,
-            defaultLanguage: defaultLanguage?.trim()
+            defaultLanguage: defaultLanguage?.trim(),
+            picture: picture?.trim()
         });
 
         // Create permission
@@ -299,7 +313,7 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  */
 router.post('/login', async (req, res) => {    
     let response = new httpP.HTTPResponsePatternModel();  
-    let currentTicket = response.getTicket(); 
+    const currentTicket = response.getTicket(); 
     var { 
         email, password, projectId, continueWithToken
     } = req.body;        
@@ -463,7 +477,7 @@ router.post('/login', async (req, res) => {
         return await response.sendResponse(res);
     }
     catch(err){                 
-        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
+        const errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
 
         await db.errorLogInsert(errorModel);
       
@@ -472,8 +486,58 @@ router.post('/login', async (req, res) => {
     } 
 });
 
+/**
+ * @swagger
+ * /auth/login/google:
+ *   get:
+ *     summary: Log in with Google.
+ *     description: 
+ *     tags:
+ *       - Auth
+ */
+router.get('/login/google', (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;    
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code&scope=profile email`;
+    
+    res.redirect(url);
+});
 
+router.get('/login/google/callback', async (req, res) => {
+    let response = new httpP.HTTPResponsePatternModel();  
+    const currentTicket = response.getTicket(); 
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const { code } = req.query;
+  
+    try {
+      // Exchange authorization code for access token
+      const { data } = await axios.post('https://oauth2.googleapis.com/token', {
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUrl,
+        grant_type: 'authorization_code',
+      });
+  
+      const { access_token, id_token } = data;
+  
+      // Use access_token or id_token to fetch user profile
+      const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+  
+      // Code to handle user authentication and retrieval using the profile data
+  
+      res.redirect('/');
+    } catch (err) {
+        const errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
 
+        await db.errorLogInsert(errorModel);
+      
+        response.set(500, false, [err.message]);
+        return await response.sendResponse(res);
+    }
+  });
 
 
 /**
