@@ -1,7 +1,7 @@
 * alter proc USP_UserToken_Check
 * alter table users picture
 
--- desafio como logar com google e ainda manter o bearer 
+-- desafio como logar com google e ainda manter o bearer , consegui passando state na url
 -- 2 após isso, entao cadastrar o usuario se ele nao existir
 -- 3 gerar token para login
 

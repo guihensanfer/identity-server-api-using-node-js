@@ -47,7 +47,7 @@ const redirectUrl = process.env.APP_HOST + 'api/v1/auth/login/google/callback';
  *                 maxLength: 300
  *               picture:
  *                 type: string
- *                 example: Picture url
+ *                 description: Picture url
  *                 maxLength: 200
  *               document:
  *                 type: object
@@ -494,10 +494,16 @@ router.post('/login', async (req, res) => {
  *     description: 
  *     tags:
  *       - Auth
+ *     parameters:
+ *       - in: query
+ *         name: projectId
+ *         description: (Not required) projectId.
+ *         schema:
+ *           type: integer
  */
 router.get('/login/google', (req, res) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;    
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code&scope=profile email`;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code&scope=profile email&state=teste`;
     
     res.redirect(url);
 });
