@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
-const redirectUrl = process.env.APP_HOST + 'api/v1/auth/login/google/callback';
+const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/google/callback';
 
 /**
  * @swagger
@@ -496,14 +496,25 @@ router.post('/login', async (req, res) => {
  *       - Auth
  *     parameters:
  *       - in: query
- *         name: projectId
- *         description: (Not required) projectId.
+ *         name: redirectUri
+ *         description: Redirect Uri after log in.
+ *         example: https://example.com.br/
  *         schema:
- *           type: integer
+ *           type: string
  */
-router.get('/login/google', (req, res) => {
+router.get('/login/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
+    // From auth jwt
+    const projectId = req.user.projectId;
+
+    // From query request
+    const redirectUri = req.redirectUri;
+
+    // 0: projectId
+    // 1: client redirect uri
+    const encodedOurParam = encodeURIComponent(`${projectId}|${redirectUri}`);
+    
     const clientId = process.env.GOOGLE_CLIENT_ID;    
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code&scope=profile email&state=teste`;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUri}&response_type=code&scope=profile email&state=${encodedOurParam}`;
     
     res.redirect(url);
 });
@@ -521,7 +532,7 @@ router.get('/login/google/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         code,
-        redirect_uri: redirectUrl,
+        redirect_uri: googleAuthRedirectUri,
         grant_type: 'authorization_code',
       });
   
