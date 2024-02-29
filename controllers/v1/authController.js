@@ -486,6 +486,49 @@ router.post('/login', async (req, res) => {
     } 
 });
 
+router.get('/login/external/redirect', async (req, res) => {    
+    let response = new httpP.HTTPResponsePatternModel();  
+    const currentTicket = response.getTicket();            
+    let errors = [];  
+    const authProcs = new Auth.Procs(currentTicket);   
+    // From auth jwt
+    const token = req.token;
+
+    try
+    {
+        
+        // token
+        if(_.isNull(token) || _.isEmpty(token)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('token'));
+        }
+
+        // ----- Check for errors
+        if(errors && errors.length > 0){
+            response.set(422, false, errors);
+            return await response.sendResponse(res);
+        }                                  
+        
+        // Check token
+        const tokenRedirect = await authProcs.userTokenVerifyAll(token, req.ip);
+        
+        if(!tokenRedirect || tokenRedirect.result <= 0 || !tokenRedirect.data || _.isNull(tokenRedirect.data) || _.isEmpty(tokenRedirect.data)){
+            response.set(401, false);
+            return await response.sendResponse(res);
+        }        
+
+        // Redirect to external uri with custom parameter token
+        redirect(tokenRedirect.data);
+    }
+    catch(err){
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
+
+        await db.errorLogInsert(errorModel);
+
+        response.set(500, false, [err.message]);      
+        return await response.sendResponse(res);
+    }    
+});
+
 /**
  * @swagger
  * /auth/login/external/google:
@@ -519,7 +562,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
             return await response.sendResponse(res);
         }
 
-        // First Name
+        // Redirect Uri
         if(_.isNull(redirectUri) || _.isEmpty(redirectUri)){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Redirect Uri'));
         }
@@ -572,7 +615,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
             expiresAt: redirectTokenExpiresAt
         }
         response.set(200, true, null, result);
-        
+
         return await response.sendResponse(res);
     }
     catch(err){
