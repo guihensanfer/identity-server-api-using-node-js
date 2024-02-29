@@ -149,15 +149,16 @@ CREATE PROCEDURE USP_UserToken_Insert (
     IN p_userID INT,
     IN p_requestIP VARCHAR(50) ,
     IN p_expiredAt    TIMESTAMP,
-    IN p_processName varchar(50)
+    IN p_processName varchar(50),
+    IN p_data varchar(500)
 )
 BEGIN
     DECLARE newToken char(40);
 
     set newToken = UUID();    
 
-    INSERT INTO UserToken (userID, token, expiredAt, requestIp, processName)
-    VALUES (p_userID, newToken, p_expiredAt, p_requestIP, p_processName);
+    INSERT INTO UserToken (userID, token, expiredAt, requestIp, processName, data)
+    VALUES (p_userID, newToken, p_expiredAt, p_requestIP, p_processName, p_data);
 
     DELETE FROM UserToken
     WHERE expiredAt < DATE_SUB(NOW(), INTERVAL 6 MONTH);
@@ -175,12 +176,13 @@ BEGIN
     -- Tabela temporária para armazenar os resultados
     CREATE TEMPORARY TABLE tempResult (
         userId INT,
-        processName VARCHAR(50)
+        processName VARCHAR(50),
+        data varchar(500)
     );
 
     -- Inserindo os dados correspondentes na tabela temporária
-    INSERT INTO tempResult (userId, processName)
-    SELECT userID, processName 
+    INSERT INTO tempResult (userId, processName, data)
+    SELECT userID, processName, data 
     FROM UserToken 
     WHERE token = p_token     
     AND requestIp = IFNULL(p_requestIP, requestIp)
@@ -189,7 +191,7 @@ BEGIN
     LIMIT 1;
 
     -- Selecionando o userId como resultado
-    SELECT userId AS result FROM tempResult;
+    SELECT userId AS result, data FROM tempResult;
 
     -- Excluindo o token atual e outros tokens antigos semelhantes
     UPDATE UserToken ut
@@ -230,6 +232,7 @@ alter table Users add enabled bit default 1;
 alter table UserToken add enabled bit not null default 1;
 alter table UserToken add disabledDate datetime null;
 alter table Users add picture varchar(200) null;
+alter table UserToken add data varchar(500) null;
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc

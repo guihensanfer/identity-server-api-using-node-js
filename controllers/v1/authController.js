@@ -488,7 +488,7 @@ router.post('/login', async (req, res) => {
 
 /**
  * @swagger
- * /auth/login/google:
+ * /auth/login/external/google:
  *   get:
  *     summary: Log in with Google.
  *     description: 
@@ -502,24 +502,90 @@ router.post('/login', async (req, res) => {
  *         schema:
  *           type: string
  */
-router.get('/login/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
+router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
+    let response = new httpP.HTTPResponsePatternModel();  
+    const currentTicket = response.getTicket(); 
+    var { redirectUri } = req.body;        
+    let errors = [];  
+    const authProcs = new Auth.Procs(currentTicket);   
     // From auth jwt
-    const projectId = req.user.projectId;
+    const projectId = req.user.projectId; 
 
-    // From query request
-    const redirectUri = req.redirectUri;
+    try
+    {
+        if (Object.keys(req.body).length === 0) {
+            response.set(400,false);
 
-    // 0: projectId
-    // 1: client redirect uri
-    const encodedOurParam = encodeURIComponent(`${projectId}|${redirectUri}`);
-    
-    const clientId = process.env.GOOGLE_CLIENT_ID;    
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUri}&response_type=code&scope=profile email&state=${encodedOurParam}`;
-    
-    res.redirect(url);
+            return await response.sendResponse(res);
+        }
+
+        // First Name
+        if(_.isNull(redirectUri) || _.isEmpty(redirectUri)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Redirect Uri'));
+        }
+        else if(redirectUri.length > 500){            
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Redirect Uri'));        
+        }       
+
+        // ProjectId
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
+
+        if(!projectId){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
+        }
+        else{
+            let project = await Projects.data.findOne({
+                where: {
+                    projectId: projectId
+                }
+            });
+
+            if(!project){
+                errors.push('ProjectId is invalid.');
+            }            
+        }
+
+        // ----- Check for errors
+        if(errors && errors.length > 0){
+            response.set(422, false, errors);
+            return await response.sendResponse(res);
+        }                                  
+        
+        // Create tokens
+        const redirectTokenExpiresAt = new Date();        
+        const dataTokenExpiresAt = new Date();        
+
+        redirectTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));
+        dataTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION) + 15);
+
+        // 0: projectId
+        // 1: client redirect uri        
+        const ourParamData = `${projectId}|${redirectUri}`;        
+        const tokenForData = await authProcs.userTokenCreate(req.user.userId, dataTokenExpiresAt, req.ip, 'GOOGLE_OAUTH_DATA', ourParamData);
+        
+        const clientId = process.env.GOOGLE_CLIENT_ID;  
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUri}&response_type=code&scope=profile email&state=${encodeURIComponent(tokenForData)}`;
+        const tokenForRedirect = await authProcs.userTokenCreate(req.user.userId, redirectTokenExpiresAt, req.ip, 'GOOGLE_OAUTH_REDIRECT', url);
+
+        const result = {
+            tokenForRedirect: tokenForRedirect,
+            expiresAt: redirectTokenExpiresAt
+        }
+        response.set(200, true, null, result);
+        
+        return await response.sendResponse(res);
+    }
+    catch(err){
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
+
+        await db.errorLogInsert(errorModel);
+
+        response.set(500, false, [err.message]);      
+        return await response.sendResponse(res);
+    }    
 });
 
-router.get('/login/google/callback', async (req, res) => {
+router.get('/login/external/google/callback', async (req, res) => {
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket(); 
     const clientId = process.env.GOOGLE_CLIENT_ID;

@@ -97,9 +97,9 @@ class Procs extends idb{
     }
   }
 
-  async userTokenCreate(userId, expiredAt, requestIp = null, processName = 'Default') {
+  async userTokenCreate(userId, expiredAt, requestIp = null, processName = 'Default', data = null) {
     try {
-      const res = await db.executeProcedure('USP_UserToken_Insert', [userId, requestIp, expiredAt, processName], this.ticket);
+      const res = await db.executeProcedure('USP_UserToken_Insert', [userId, requestIp, expiredAt, processName, data], this.ticket);
       return res[0][0][0].result;
     } catch {
       return null;
@@ -110,6 +110,15 @@ class Procs extends idb{
     try {
       const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp], this.ticket);
       return res[0][0][0].result;
+    } catch {
+      return null;
+    }
+  }
+
+  async userTokenVerifyAll(token, requestIp = null) {
+    try {
+      const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp], this.ticket);
+      return res[0][0][0];
     } catch {
       return null;
     }
