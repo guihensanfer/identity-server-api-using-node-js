@@ -86,7 +86,7 @@ class HTTPResponsePatternModel{
     // Validation to prevent unauthorized user requests to project IDs outside of their authorization
     static verifyProjectId(req, bodyProjectId){
       if(!req || !req.user || !req.user.projectId)
-        return false;
+        return bodyProjectId;
 
       if(req.user.projectId == -1)
         return bodyProjectId; // Super user can request for any projectId

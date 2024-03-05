@@ -166,7 +166,6 @@ BEGIN
     select newToken as result;
 END
 
-call USP_UserToken_Check('b504254f-cbb3-42db-8107-8c7fd14cd048', '::1');
 drop procedure USP_UserToken_Check
 CREATE PROCEDURE USP_UserToken_Check (
     IN p_token VARCHAR(50),    
@@ -185,7 +184,7 @@ BEGIN
     SELECT userID, processName, data 
     FROM UserToken 
     WHERE token = p_token     
-    AND requestIp = IFNULL(p_requestIP, requestIp)
+    AND (p_requestIP IS NULL OR requestIp = p_requestIP)
     AND enabled = 1
     AND expiredAt > NOW()    
     LIMIT 1;
@@ -278,11 +277,19 @@ update Users set emailConfirmed=1 where userId=1
 select * from UsersRoles 
 update UsersRoles set roleId = 1 where userId = 1
 
-
+call USP_UserToken_Check('a18f9293-db38-11ee-b4e8-d08e79e09abc', null)
+select * from UserToken where token = 'a18f9293-db38-11ee-b4e8-d08e79e09abc' order by data desc
+ SELECT userID, processName, data 
+    FROM UserToken 
+    WHERE token = 'a18f9293-db38-11ee-b4e8-d08e79e09abc'     
+    AND (null IS NULL OR requestIp = 1)
+    AND enabled = 1
+    AND expiredAt > NOW()    
+    LIMIT 1;
 
 ----------
 
 select * from EmailLogs order by emailLogId desc
 
-update Users set enabled = 1
+update Users set emailConfirmed = 1
 

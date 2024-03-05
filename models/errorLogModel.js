@@ -34,7 +34,7 @@ class ErrorLogModel {
         
         return new ErrorLogModel(
             req.path,
-            err.response.status ?? 0,
+            err.response?.status ?? 0,
             3,
             (err.message ?? err.cause) + err.stack,
             errorDetails,

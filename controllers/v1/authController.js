@@ -15,7 +15,7 @@ const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
-const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/google/callback';
+const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
  * @swagger
@@ -78,8 +78,8 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/google/c
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
-// router.post('/register', async (req, res) => {      
+// router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
+router.post('/register', async (req, res) => {      
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        
@@ -442,15 +442,14 @@ router.post('/login', async (req, res) => {
             throw new Error(httpP.HTTPResponsePatternModel.cannotGetMsg('User role'));
         }
 
-        const roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);
-        const isSuperUser = roleNames.some(role => RolesModel.superUserGroup.includes(role));
+        const roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);    
 
         let secret = process.env.SECRET;        
         let token = jwt.sign({            
             id: user.userId,
             userEmail: user.email,
             userName: user.firstName,
-            projectId: isSuperUser ? -1 : user.projectId,
+            projectId: user.projectId,
             roles: [roleNames]
         },
         secret,
@@ -486,13 +485,36 @@ router.post('/login', async (req, res) => {
     } 
 });
 
+/**
+ * @swagger
+ * /auth/login/external/redirect:
+ *   get:
+ *     summary: Redirect to external logging.
+ *     description: Redirect to external logging based on token with context.
+ *     tags:
+ *       - Auth
+ *     parameters:
+ *       - name: token
+ *         in: query
+ *         description: Token with context for redirect.
+ *         required: true
+ *         type: string
+ *         maxLength: 100
+ *     responses:
+ *       '422':
+ *         description: Unprocessable entity, the provided data is not valid. 
+ *       '401':
+ *         description: Log in unauthorized.
+ *       '500':
+ *         description: Internal Server Error.
+ */
 router.get('/login/external/redirect', async (req, res) => {    
     let response = new httpP.HTTPResponsePatternModel();  
     const currentTicket = response.getTicket();            
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);   
     // From auth jwt
-    const token = req.token;
+    const token = req.query.token;
 
     try
     {
@@ -509,7 +531,7 @@ router.get('/login/external/redirect', async (req, res) => {
         }                                  
         
         // Check token
-        const tokenRedirect = await authProcs.userTokenVerifyAll(token, req.ip);
+        const tokenRedirect = await authProcs.userTokenVerifyAll(token);
         
         if(!tokenRedirect || tokenRedirect.result <= 0 || !tokenRedirect.data || _.isNull(tokenRedirect.data) || _.isEmpty(tokenRedirect.data)){
             response.set(401, false);
@@ -517,7 +539,7 @@ router.get('/login/external/redirect', async (req, res) => {
         }        
 
         // Redirect to external uri with custom parameter token
-        redirect(tokenRedirect.data);
+        res.redirect(tokenRedirect.data);
     }
     catch(err){
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -532,18 +554,63 @@ router.get('/login/external/redirect', async (req, res) => {
 /**
  * @swagger
  * /auth/login/external/google:
- *   get:
- *     summary: Log in with Google.
- *     description: 
+ *   post:
+ *     summary: Token for logging in with Google.
+ *     description: Allows you to generate a token to use in the /external/redirect endpoint for completing the login process with Google.
  *     tags:
  *       - Auth
- *     parameters:
- *       - in: query
- *         name: redirectUri
- *         description: Redirect Uri after log in.
- *         example: https://example.com.br/
- *         schema:
- *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               redirectUri:
+ *                 type: string
+ *                 format: uri
+ *                 maxLength: 500
+ *                 required: true
+ *     responses:
+ *       '200':
+ *         description: Process was successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ticket:
+ *                   type: string
+ *                   description: The ticket of the request
+ *                 message:
+ *                   type: string
+ *                   description: Message indicating the process small description
+ *                 success:
+ *                   type: boolean
+ *                   description: Indicates if the process was successful
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: List of errors (null in case of success)
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     tokenForRedirect:
+ *                       type: string
+ *                       description: Token allows you to use in the /external/redirect endpoint.
+ *                     expiresAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Token expiration date and time
+ *       '400':
+ *         description: Bad request, verify your request data.
+ *       '422':
+ *         description: Unprocessable entity, the provided data is not valid. 
+ *       '401':
+ *         description: Log in unauthorized.
+ *       '500':
+ *         description: Internal Server Error.
  */
 router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
     let response = new httpP.HTTPResponsePatternModel();  
@@ -552,7 +619,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);   
     // From auth jwt
-    const projectId = req.user.projectId; 
+    let projectId = req.user.projectId; 
 
     try
     {
@@ -600,15 +667,16 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
 
         redirectTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));
         dataTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION) + 15);
-
-        // 0: projectId
-        // 1: client redirect uri        
-        const ourParamData = `${projectId}|${redirectUri}`;        
-        const tokenForData = await authProcs.userTokenCreate(req.user.userId, dataTokenExpiresAt, req.ip, 'GOOGLE_OAUTH_DATA', ourParamData);
         
+        const ourParamData = {
+            projectId: projectId,
+            redirectUri: redirectUri,
+            provider: 'Google'
+        };
+        const tokenForData = await authProcs.userTokenCreate(req.user.id, dataTokenExpiresAt, null, 'EXTERNAL_OAUTH_DATA', JSON.stringify(ourParamData));        
         const clientId = process.env.GOOGLE_CLIENT_ID;  
         const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUri}&response_type=code&scope=profile email&state=${encodeURIComponent(tokenForData)}`;
-        const tokenForRedirect = await authProcs.userTokenCreate(req.user.userId, redirectTokenExpiresAt, req.ip, 'GOOGLE_OAUTH_REDIRECT', url);
+        const tokenForRedirect = await authProcs.userTokenCreate(req.user.id, redirectTokenExpiresAt,null, 'EXTERNAL_OAUTH_REDIRECT', url);
 
         const result = {
             tokenForRedirect: tokenForRedirect,
@@ -633,7 +701,7 @@ router.get('/login/external/google/callback', async (req, res) => {
     const currentTicket = response.getTicket(); 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const { code } = req.query;
+    const { code, state } = req.query;
   
     try {
       // Exchange authorization code for access token
@@ -670,7 +738,7 @@ router.get('/login/external/google/callback', async (req, res) => {
  * @swagger
  * /auth/forgetpassword:
  *   post:
- *     summary: (FP1) Generate and send an email with a token to complete the reset password operation.
+ *     summary: Generate and send an email with a token to complete the reset password operation.
  *     description: It is the first step, generate and send an email with a link to click and complete the reset password operation.
  *     tags:
  *       - Auth
@@ -853,7 +921,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  * @swagger
  * /auth/resetpassword:
  *   post:
- *     summary: (FP2) Change user password.
+ *     summary: Change user password.
  *     description: It is the last step after was using token in the /forgetpassword end point, now will set a new user password.
  *     tags:
  *       - Auth
