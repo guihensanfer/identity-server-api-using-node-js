@@ -47,7 +47,7 @@ function getParameterType(value) {
     return 'default';
 }
   
-function formatJSON(value) {
+function convertToJSON(value) {
     try {
       return JSON.stringify(value);
     } catch (error) {
@@ -58,7 +58,7 @@ function formatJSON(value) {
 module.exports = {
     formatDatetime,
     getParameterType,
-    formatJSON,
+    convertToJSON,
     isValidEmail,
     extractNumbers,
     isValidURI

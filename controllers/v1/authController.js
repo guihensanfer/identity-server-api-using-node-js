@@ -720,7 +720,55 @@ router.get('/login/external/google/callback', async (req, res) => {
         headers: { Authorization: `Bearer ${access_token}` },
       });
   
-      // Code to handle user authentication and retrieval using the profile data
+      const jsonFromInitialRequest = await authProcs.userTokenVerifyAll(state);      
+
+      if(!_.isNull(jsonFromInitialRequest) && !_.isEmpty(jsonFromInitialRequest)){
+        const obj = util.convertToJSON(jsonFromInitialRequest);
+        
+        if(obj){
+            const provider = obj.provider;
+
+            if(provider && provider == 'Google'){
+                const redirectUri = obj.redirectUri;
+                const projectId = obj.projectId;
+
+                if(!redirectUri)
+                {
+                    response.set(400, false, null, null, 'Invalid origin data redirect uri.');      
+                    return await response.sendResponse(res);    
+                }
+
+                if(!projectId && projectId > 0){
+                    response.set(400, false, null, null, 'Invalid origin project id.');      
+                    return await response.sendResponse(res);    
+                }
+
+                let user = await Auth.data.where({
+                    email: profile.email,
+                    projectId: projectId
+                });
+
+                if(!user){
+                    // User not exists, then create user with basic profile from Google
+                }
+
+                // Create a refresh token for first login
+                const expiresAt = new Date();                        
+
+                expiresAt.setMinutes(expiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));
+                const tokenFirstLogin = await authProcs.userTokenCreate(user.userId, expiresAt, null, 'REFRESH_TOKEN');
+
+                if(!tokenFirstLogin){
+                    throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('Token for first login'));
+                }
+            }
+            else
+            {
+                response.set(400, false, null, null, 'Invalid origin provider.');      
+                return await response.sendResponse(res);
+            }
+        }
+      }
   
       res.redirect('/');
     } catch (err) {
