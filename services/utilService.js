@@ -48,11 +48,12 @@ function getParameterType(value) {
 }
   
 function convertToJSON(value) {
-    try {
-      return JSON.stringify(value);
-    } catch (error) {
+  try {
+    const jsonObject = JSON.parse(value);
+    return jsonObject;
+  } catch (error) {      
       return null;
-    }
+  }
 }
 
 module.exports = {

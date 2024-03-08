@@ -671,6 +671,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         const ourParamData = {
             projectId: projectId,
             redirectUri: redirectUri,
+            originRequestIp: req.ip, // Used to improve secure on the final callback redirect (prevent http intercepts token parameter)
             provider: 'Google'
         };
         const tokenForData = await authProcs.userTokenCreate(req.user.id, dataTokenExpiresAt, null, 'EXTERNAL_OAUTH_DATA', JSON.stringify(ourParamData));        
@@ -702,6 +703,7 @@ router.get('/login/external/google/callback', async (req, res) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const { code, state } = req.query;
+    const authProcs = new Auth.Procs(currentTicket);   
   
     try {
       // Exchange authorization code for access token
@@ -722,14 +724,14 @@ router.get('/login/external/google/callback', async (req, res) => {
   
       const jsonFromInitialRequest = await authProcs.userTokenVerifyAll(state);      
 
-      if(!_.isNull(jsonFromInitialRequest) && !_.isEmpty(jsonFromInitialRequest)){
-        const obj = util.convertToJSON(jsonFromInitialRequest);
+      if(jsonFromInitialRequest && !_.isNull(jsonFromInitialRequest.data) && !_.isEmpty(jsonFromInitialRequest.data)){
+        const obj = util.convertToJSON(jsonFromInitialRequest.data);
         
         if(obj){
             const provider = obj.provider;
 
             if(provider && provider == 'Google'){
-                const redirectUri = obj.redirectUri;
+                let redirectUri = obj.redirectUri;
                 const projectId = obj.projectId;
 
                 if(!redirectUri)
@@ -738,14 +740,17 @@ router.get('/login/external/google/callback', async (req, res) => {
                     return await response.sendResponse(res);    
                 }
 
-                if(!projectId && projectId > 0){
+                if(!projectId || projectId <= 0){
                     response.set(400, false, null, null, 'Invalid origin project id.');      
                     return await response.sendResponse(res);    
                 }
 
-                let user = await Auth.data.where({
-                    email: profile.email,
-                    projectId: projectId
+                let user = await Auth.data.findOne({                
+                    where:{
+                        email: profile.email,
+                        projectId: projectId
+                    },
+                    attributes: ['userId']
                 });
 
                 if(!user){
@@ -755,12 +760,22 @@ router.get('/login/external/google/callback', async (req, res) => {
                 // Create a refresh token for first login
                 const expiresAt = new Date();                        
 
-                expiresAt.setMinutes(expiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));
-                const tokenFirstLogin = await authProcs.userTokenCreate(user.userId, expiresAt, null, 'REFRESH_TOKEN');
+                expiresAt.setMinutes(expiresAt.getMinutes() + 3);
+                
+                const tokenFirstLogin = await authProcs.userTokenCreate(
+                    user.userId, 
+                    expiresAt, 
+                    process.env.ENVIROMENT_DEVELOPMENT === 'true' ? null : obj.originRequestIp, // Production use the request ip to improve security
+                    'REFRESH_TOKEN'
+                );
 
                 if(!tokenFirstLogin){
                     throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('Token for first login'));
                 }
+
+                redirectUri += `?token=${tokenFirstLogin}`;
+
+                res.redirect(redirectUri);
             }
             else
             {
@@ -770,7 +785,7 @@ router.get('/login/external/google/callback', async (req, res) => {
         }
       }
   
-      res.redirect('/');
+      throw new Error('Cannot complete the authenticate.');
     } catch (err) {
         const errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
 

@@ -16,3 +16,5 @@ pendencias:
 
 * cadastrar usuario com external login
     * considerar picture que recebemos
+
+* padronizar em um enum os tipos de nomenclaturas para UserToken process name

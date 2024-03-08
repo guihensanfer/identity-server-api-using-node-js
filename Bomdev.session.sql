@@ -277,8 +277,8 @@ update Users set emailConfirmed=1 where userId=1
 select * from UsersRoles 
 update UsersRoles set roleId = 1 where userId = 1
 
-call USP_UserToken_Check('a18f9293-db38-11ee-b4e8-d08e79e09abc', null)
-select * from UserToken where token = 'a18f9293-db38-11ee-b4e8-d08e79e09abc' order by data desc
+call USP_UserToken_Check('5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc', null)
+select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' order by data desc
  SELECT userID, processName, data 
     FROM UserToken 
     WHERE token = 'a18f9293-db38-11ee-b4e8-d08e79e09abc'     
