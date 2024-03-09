@@ -755,6 +755,22 @@ router.get('/login/external/google/callback', async (req, res) => {
 
                 if(!user){
                     // User not exists, then create user with basic profile from Google
+
+                    const createUser = await Auth.data.create({
+                        firstName: profile.given_name?.trim(),
+                        lastName: profile.last_name?.trim(),
+                        email: profile.email?.trim(),
+                        password: null,
+                        document: null,
+                        documentTypeId: null,
+                        projectId: projectId,
+                        defaultLanguage: profile.language?.trim(),
+                        picture: profile.picture
+                    });
+
+                    if(!createUser){
+                        throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User'));
+                    }
                 }
 
                 // Create a refresh token for first login

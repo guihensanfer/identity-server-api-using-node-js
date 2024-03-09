@@ -18,3 +18,7 @@ pendencias:
     * considerar picture que recebemos
 
 * padronizar em um enum os tipos de nomenclaturas para UserToken process name
+
+* validar uri no metodo post google
+
+* conferir se existe metodo com nomenclatura url mudar para uri nos parametros e na documentação
