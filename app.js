@@ -10,6 +10,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 const db = require('./db');
 const RolesModel = require('./models/rolesModel');
+const authService = require('./services/authService');
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -182,5 +183,21 @@ app.use('/api/v1/projects', projectsController);
             description: RolesModel.ROLE_USER
         }
     });
+
+    
+    // TODO: If you need to register the first super user. Do not forget to change the user role to ADMIN
+    // const authS = new authService('testing');
+    // // Create user and others relationship
+    // const newUserId = await authS.createUser({
+    //     firstName: 'profile.given_name',
+    //     lastName: 'profile.family_name',
+    //     email: 'profile.email',
+    //     password: null,
+    //     document: null,
+    //     documentTypeId: null,
+    //     projectId: 2,
+    //     defaultLanguage: 'pt-BR',
+    //     picture: null
+    // }, RolesModel.ROLE_USER);     
     
 })();

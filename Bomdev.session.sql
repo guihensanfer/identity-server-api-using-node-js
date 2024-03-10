@@ -255,9 +255,9 @@ truncate table Users
 truncate table ErrorLogs
 
 select * from Users
-delete from Users where userId=3
-delete from UserToken where userId = 3;
-delete from UsersRoles where userId = 3;
+delete from Users where userId=4
+delete from UserToken where userId = 4;
+delete from UsersRoles where userId = 4;
 select * from UsersRoles where userId=1
 
 select * from Projects
@@ -295,5 +295,3 @@ select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' ord
 select * from EmailLogs order by emailLogId desc
 
 update Users set emailConfirmed = 1
-
-select distinct procedure_name from ProcedureStatistics where ticket = 'default'
