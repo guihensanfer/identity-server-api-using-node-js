@@ -1,10 +1,3 @@
-*alter table UserToken add data varchar(500) null;
-* USP_UserToken_Check
-
--- desafio como logar com google e ainda manter o bearer , consegui passando state na url
--- 2 após isso, entao cadastrar o usuario se ele nao existir
--- 3 gerar token para login
-
 -- testar picture em auth/register
 
 
@@ -22,3 +15,5 @@ pendencias:
 * validar uri no metodo post google
 
 * conferir se existe metodo com nomenclatura url mudar para uri nos parametros e na documentação
+
+* processo de envio de email nao esta passando o ticket, mapear outras procs que tambem estao nessa situação

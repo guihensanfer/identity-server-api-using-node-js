@@ -255,6 +255,9 @@ truncate table Users
 truncate table ErrorLogs
 
 select * from Users
+delete from Users where userId=3
+delete from UserToken where userId = 3;
+delete from UsersRoles where userId = 3;
 select * from UsersRoles where userId=1
 
 select * from Projects
@@ -277,7 +280,7 @@ update Users set emailConfirmed=1 where userId=1
 select * from UsersRoles 
 update UsersRoles set roleId = 1 where userId = 1
 
-call USP_UserToken_Check('5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc', null)
+call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
 select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' order by data desc
  SELECT userID, processName, data 
     FROM UserToken 
@@ -293,3 +296,4 @@ select * from EmailLogs order by emailLogId desc
 
 update Users set emailConfirmed = 1
 
+select distinct procedure_name from ProcedureStatistics where ticket = 'default'

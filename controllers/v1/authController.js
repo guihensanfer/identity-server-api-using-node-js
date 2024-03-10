@@ -3,6 +3,7 @@ const _ = require('lodash');
 const Auth = require('../../repositories/authRepository');
 const util = require('../../services/utilService');
 const mail = require('../../services/mailService');
+const authService = require('../../services/authService');
 const DocumentTypesModel = require('../../models/documentTypesModel');
 const RolesModel = require('../../models/rolesModel');
 const Projects = require('../../repositories/projectsRepository');
@@ -15,6 +16,7 @@ const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
+const AuthServices = require('../../services/authService');
 const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
@@ -756,20 +758,30 @@ router.get('/login/external/google/callback', async (req, res) => {
                 if(!user){
                     // User not exists, then create user with basic profile from Google
 
-                    const createUser = await Auth.data.create({
-                        firstName: profile.given_name?.trim(),
-                        lastName: profile.last_name?.trim(),
-                        email: profile.email?.trim(),
+                    const authS = new authService(currentTicket);
+
+                    // Create user and others relationship
+                    const newUserId = await authS.createUser({
+                        firstName: profile.given_name,
+                        lastName: profile.family_name,
+                        email: profile.email,
                         password: null,
                         document: null,
                         documentTypeId: null,
                         projectId: projectId,
-                        defaultLanguage: profile.language?.trim(),
+                        defaultLanguage: profile.locale?.trim(),
                         picture: profile.picture
+                    }, RolesModel.ROLE_USER);                    
+
+                    user = await Auth.data.findOne({                
+                        where:{
+                            userId: newUserId
+                        },
+                        attributes: ['userId']
                     });
 
-                    if(!createUser){
-                        throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User'));
+                    if(!user){
+                        throw new Error('User has been created, but cannot be found');
                     }
                 }
 
@@ -781,7 +793,7 @@ router.get('/login/external/google/callback', async (req, res) => {
                 const tokenFirstLogin = await authProcs.userTokenCreate(
                     user.userId, 
                     expiresAt, 
-                    process.env.ENVIROMENT_DEVELOPMENT === 'true' ? null : obj.originRequestIp, // Production use the request ip to improve security
+                    process.env.EXTERNAL_OATH_USE_SAME_ORIGIN_IP === 'false' ? null : obj.originRequestIp, // Production use the request ip to improve security
                     'REFRESH_TOKEN'
                 );
 
