@@ -637,7 +637,10 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         }
         else if(redirectUri.length > 500){            
             errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Redirect Uri'));        
-        }       
+        }     
+        else if(!util.isValidURI(redirectUri))  {
+            errors.push('Invalid Redirect Uri');        
+        }
 
         // ProjectId
         projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
@@ -844,7 +847,7 @@ router.get('/login/external/google/callback', async (req, res) => {
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               clientUrl:
+ *               clientUri:
  *                 type: string
  *                 example: https://example.com.br
  *     security:
@@ -890,7 +893,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId, clientUrl
+        email, projectId, clientUri
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -931,13 +934,13 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
             }
         }
 
-        // clientUrl
-        if(_.isNull(clientUrl) || _.isEmpty(clientUrl)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUrl'));            
+        // clientUri
+        if(_.isNull(clientUri) || _.isEmpty(clientUri)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUri'));            
         }
-        else if(!util.isValidURI(clientUrl))
+        else if(!util.isValidURI(clientUri))
         {
-            errors.push('clientUrl is invalid.');
+            errors.push('clientUri is invalid.');
         }
 
         // ----- Check for errors
@@ -975,7 +978,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         };
 
         const callbackUrl = url.format({
-            pathname: clientUrl,
+            pathname: clientUri,
             query: queryParams
         });
 
@@ -993,7 +996,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         //     callbackUrl: callbackUrl
         // };
 
-        mail.sendEmail(mailOptions, projectId);
+        mail.sendEmail(mailOptions, projectId, currentTicket);
 
         response.set(200, true, null, null);
         return await response.sendResponse(res);
@@ -1160,10 +1163,10 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               clientUrl:
+ *               clientUri:
  *                 type: string
  *                 example: https://example.com.br
- *                 description: This URL will be utilized in the email. Upon clicking, it will be accompanied by a token.
+ *                 description: This Uri will be utilized in the email. Upon clicking, it will be accompanied by a token.
  *     security:
  *       - JWT: []
  *     responses:
@@ -1207,7 +1210,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
     let response = new httpP.HTTPResponsePatternModel();  
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId, clientUrl
+        email, projectId, clientUri
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -1248,13 +1251,13 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
             }
         }
 
-        // clientUrl
-        if(_.isNull(clientUrl) || _.isEmpty(clientUrl)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUrl'));            
+        // clientUri
+        if(_.isNull(clientUri) || _.isEmpty(clientUri)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUri'));            
         }
-        else if(!util.isValidURI(clientUrl))
+        else if(!util.isValidURI(clientUri))
         {
-            errors.push('clientUrl is invalid.');
+            errors.push('clientUri is invalid.');
         }
 
         // ----- Check for errors
@@ -1292,7 +1295,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         };
 
         const callbackUrl = url.format({
-            pathname: clientUrl,
+            pathname: clientUri,
             query: queryParams
         });
 

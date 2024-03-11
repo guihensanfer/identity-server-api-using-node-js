@@ -1,4 +1,4 @@
--- testar picture em auth/register
+-- OK TESTADO testar picture em auth/register
 
 
 pendencias:
@@ -7,13 +7,13 @@ pendencias:
     * no retorno de created 201 melhorar descrição dizendo que foi enviado email
     * pensar na possibilidade de quando resetar email tambem deixar emailCOnfirmed = 1
 
-* cadastrar usuario com external login
+* OK cadastrar usuario com external login
     * considerar picture que recebemos
 
 * padronizar em um enum os tipos de nomenclaturas para UserToken process name
 
-* validar uri no metodo post google
+* TESTAR validar uri no metodo post google
 
-* conferir se existe metodo com nomenclatura url mudar para uri nos parametros e na documentação
+* TESTAR conferir se existe metodo com nomenclatura url mudar para uri nos parametros e na documentação
 
-* processo de envio de email nao esta passando o ticket, mapear outras procs que tambem estao nessa situação
+* TESTAR processo de envio de email nao esta passando o ticket, mapear outras procs que tambem estao nessa situação

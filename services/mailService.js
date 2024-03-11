@@ -2,13 +2,13 @@ const { Worker, isMainThread, parentPort, workerData } = require('worker_threads
 const nodemailer = require('nodemailer');
 const db = require('../db');
 
-function sendEmail(transporterOptions, mailOptions, projectId) {
+function sendEmail(transporterOptions, mailOptions, projectId, ticket) {
     const transporter = nodemailer.createTransport(transporterOptions);
     transporter.sendMail(mailOptions, async (error, info) => {
-      let successfully = error == null;
+      const successfully = error == null;
       
       // Save log email sent
-      await db.executeProcedure('USP_InsertEmailLog', [mailOptions.to, mailOptions.subject, mailOptions.html, projectId, error ?? info, successfully], this.ticket);
+      await db.executeProcedure('USP_InsertEmailLog', [mailOptions.to, mailOptions.subject, mailOptions.html, projectId, error ?? info, successfully], ticket);
     });
 }
 
@@ -31,10 +31,10 @@ if (isMainThread) {
     };
 
     const emailModule = {
-        sendEmail: (mailOptions, projectId) => {
+        sendEmail: (mailOptions, projectId, ticket) => {
             return new Promise((resolve, reject) => {
                 const worker = new Worker(__filename, {
-                    workerData: { transporterOptions, mailOptions, projectId }
+                    workerData: { transporterOptions, mailOptions, projectId, ticket }
                 });
 
                 worker.on('message', (message) => {
@@ -58,7 +58,7 @@ if (isMainThread) {
 } else {
     // Thread
 
-    const { transporterOptions, mailOptions, projectId } = workerData;
+    const { transporterOptions, mailOptions, projectId, ticket } = workerData;
 
-    sendEmail(transporterOptions, mailOptions, projectId);
+    sendEmail(transporterOptions, mailOptions, projectId, ticket);
 }
