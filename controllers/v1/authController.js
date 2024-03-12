@@ -222,7 +222,7 @@ router.post('/register', async (req, res) => {
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('user'));
         }
 
-        response.set(201, true);
+        response.set(201, true, null, null, 'The creation was successful. An email confirmation has been sent to the user.');
         return await response.sendResponse(res);
     }
     catch(err){

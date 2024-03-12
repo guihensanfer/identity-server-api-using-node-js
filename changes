@@ -4,7 +4,7 @@
 pendencias:
 * validar swagger campos requireds
 * após o cadastro enviar email de confirmacao
-    * no retorno de created 201 melhorar descrição dizendo que foi enviado email
+    * TESTAR no retorno de created 201 melhorar descrição dizendo que foi enviado email
     * pensar na possibilidade de quando resetar email tambem deixar emailCOnfirmed = 1
 
 * OK cadastrar usuario com external login
