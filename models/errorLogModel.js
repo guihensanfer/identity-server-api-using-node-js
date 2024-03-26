@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require('uuid');
 const _ = require('lodash');
 
 class ErrorLogModel {
@@ -23,7 +22,7 @@ class ErrorLogModel {
         this.ticket = ticket            
     }    
 
-    static DefaultForEndPoints(req, err, ticket = null) {    
+    static DefaultForEndPoints(req, err, ticket = 'default') {    
         let errorDetails = req.body;
 
         if(_.isNull(errorDetails) || _.isEmpty(errorDetails)){
@@ -40,9 +39,35 @@ class ErrorLogModel {
             errorDetails,
             req.user ? req.user.id : null,
             req.ip,
-            ticket ?? uuidv4()
+            ticket
         );
     }
+
+    static DefaultForSequelize(methodName, err, ticket = 'default') {
+        let errorDetails = null;
+    
+        if (err.errors && err.errors.length > 0) {            
+            errorDetails = err.errors.map(error => ({
+                message: error.message,
+                field: error.path,
+                value: error.value
+            }));
+        } else if (err.original && err.original.message) {            
+            errorDetails = err.original.message;
+        }
+            
+        return new ErrorLogModel(
+            methodName,
+            err.status || 0,
+            3,
+            (err.message || err.cause) + (err.stack || ''),
+            errorDetails ? JSON.stringify(errorDetails) : null,
+            null,
+            null,
+            ticket
+        );
+    }
+    
 }
 
 module.exports = ErrorLogModel;

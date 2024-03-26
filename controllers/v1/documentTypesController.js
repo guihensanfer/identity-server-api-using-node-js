@@ -58,7 +58,7 @@ const httpP = require('../../models/httpResponsePatternModel');
  *         description: Page not found.
  */
 router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {   
-    let response = new httpP.HTTPResponsePatternModel();
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket();          
     const { page } = req.query;
     const currentPage = parseInt(page) || httpP.DEFAULT_PAGE;
@@ -81,12 +81,12 @@ router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), asyn
         if (currentPage > totalPages && totalPages !== 0) {            
             response.set(404, false);
             
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
 
         response.set(200, true, null, result.rows);
         
-        return await response.sendResponse(res);
+        return await response.sendResponse();
 
     } catch (err) {
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -95,7 +95,7 @@ router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), asyn
       
         response.set(500, false);
         
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
 });
 

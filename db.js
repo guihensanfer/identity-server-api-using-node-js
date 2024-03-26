@@ -1,6 +1,5 @@
 const mysql = require('mysql2');
 const ErrorLogModel = require('./models/errorLogModel');
-const ProcedureStatistics = require('./models/procedureStatisticsModel');
 const util = require('./services/utilService');
 const Sequelize = require('sequelize');
 const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
@@ -9,7 +8,7 @@ const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proc
   port:3306
 });
 const ERRORLOGS_PROCEDURE_NAME = 'USP_ERRORLOGS_INSERT';
-const STATISTICS_PROCEDURE_NAME = 'USP_ProcedureStatistics_Insert';
+const STATISTICS_PROCEDURE_NAME = 'USP_OperationLogs_Insert';
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -18,21 +17,50 @@ const pool = mysql.createPool({
     connectionLimit: 10,
 });
 
-async function statisticsInsert (statatisticsModel){  
-  const {
-    procedureName, 
-    executionTime, 
-    sqlCall,
-    ticket,
-    successfully
-  } = statatisticsModel;
+class OperationLogs{
+  constructor(procedureName, sqlCall, ticket, is_checkpoint){
+      this.ticket = ticket;
+      this.procedureName = procedureName;        
+      this.startTime = performance.now();
+      this.timeElapsed = null;
+      this.successfully = false;
+      this.sqlCall = sqlCall;
+      this.ticket = ticket;
+      
+      this.is_checkpoint = is_checkpoint;
+  }
+
+  async commit(successfully){    
+    let finish = performance.now();
+    this.timeElapsed = finish - this.startTime;
+    
+    finish = null;
+
+    this.successfully = successfully;
+
+    await operationLogsInsert(this.ticket, 
+      this.procedureName, 
+      this.timeElapsed,
+      this.sqlCall,
+      this.successfully,
+      this.is_checkpoint);
+  }
+}
+
+async function operationLogsInsert (ticket,
+  procedureName,
+  timeElapsed,
+  sqlCall,
+  successfully,
+  is_checkpoint){  
   
   await executeProcedure(STATISTICS_PROCEDURE_NAME, [
     procedureName, 
-    executionTime, 
+    timeElapsed, 
     sqlCall,
     ticket,
-    successfully
+    successfully,
+    is_checkpoint
   ]);
 }
 
@@ -62,8 +90,7 @@ async function errorLogInsert (errorLogModel){
   ]);
 }
 
-async function executeProcedure(procedureName, params = [], ticket = 'default'){  
-  let startTime = performance.now();
+async function executeProcedure(procedureName, params = [], ticket = 'Default'){    
   const placeholders = params?.map(() => '?').join(',');
   const callProcedure = `CALL ${procedureName}(${placeholders})`;  
   let successfully = true; 
@@ -86,6 +113,10 @@ async function executeProcedure(procedureName, params = [], ticket = 'default'){
 
     return param; 
   });   
+  const operationLog = new OperationLogs(procedureName,
+    `CALL ${procedureName}(${formattedParams?.join(',')})`,
+    ticket,
+    false);
 
   try {                   
     const results = await pool.promise().query(callProcedure, formattedParams);
@@ -93,7 +124,7 @@ async function executeProcedure(procedureName, params = [], ticket = 'default'){
     return results;
 
   } catch (error) { 
-    let errorLog = new ErrorLogModel(
+    const errorLog = new ErrorLogModel(
       error.message,
       error.errno ?? 0,
       3,
@@ -111,31 +142,18 @@ async function executeProcedure(procedureName, params = [], ticket = 'default'){
     throw error;
   }
   finally{
-    let finish = performance.now();
-    let timeElapsed = finish - startTime;
-
-    startTime = null;
-    finish = null;
-    
-    // statistics
+    // operation logs
     if(procedureName != ERRORLOGS_PROCEDURE_NAME && procedureName != STATISTICS_PROCEDURE_NAME){
-      let statistic = new ProcedureStatistics(procedureName, 
-        timeElapsed, 
-        `CALL ${procedureName}(${formattedParams?.join(',')})`,
-        ticket,
-        successfully
-      );
-      
-      // Without await for prevent method wait for conclusion
-      statisticsInsert(statistic);
+      await operationLog.commit(successfully);              
     }
   }
 }
 
 module.exports = {
-    
+  OperationLogs,
     pool,    
     errorLogInsert,
     executeProcedure,
+    operationLogsInsert,
     _sequealize
 };

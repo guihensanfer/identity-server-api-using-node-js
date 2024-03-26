@@ -4,23 +4,35 @@ const PAGE_SIZE = 15;
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 const RolesModel = require('./rolesModel');
+const httpReqLog = require('../repositories/httpRequestsLogs');
 
 class HTTPResponsePatternModel{
-    constructor(){
+    constructor(req,res){
         this.message = '';
         this.success = false;
         this.errors = [];
         this.data = [];
         this._statusCode = 0;    
-        this.ticket = uuidv4(); 
+        this.ticket = 'Default';
+        this._useLogs = false;
+        this.req = req;
+        this.res = res;
     }    
 
-    getTicket() {
+    getTicket() {        
         return this.ticket;
     }
     
     getStatusCode(){
         return this._statusCode;
+    }
+
+    async useLogs(){
+      this.ticket = uuidv4();
+      await httpReqLog.init(this.ticket);
+      this._useLogs = true;
+
+      return this;
     }
 
     set(statusCode,        
@@ -58,29 +70,39 @@ class HTTPResponsePatternModel{
         this.currentPage = null;
     }
 
-    async sendResponse(res) {
-        return new Promise((resolve, reject) => {
-            let response = { 
-                message: this.message,
-                ticket: this.ticket,
-                success: this.success,
-                errors: this.errors,
-                data: this.data
-            };
-            
-      
-            if(this.currentPage){
+    async sendResponse() {
+      return new Promise(async (resolve, reject) => {
+          let response = { 
+              message: this.message,
+              ticket: this.ticket,
+              success: this.success,
+              errors: this.errors,
+              data: this.data
+          };
+  
+          if (this.currentPage) {
               response.currentPage = this.currentPage;
-            }
-      
-            if(this.totalPages){
+          }
+  
+          if (this.totalPages) {
               response.totalPages = this.totalPages;
-            }
-                        
-            res.status(this._statusCode).json(response);
-            resolve();
-        });
-    }
+          }
+  
+          if (this._useLogs == true) {
+              try {
+                  // Update the request log status
+                  await httpReqLog.commit(this.ticket, this.req.path, null, this._statusCode, this.req?.user?.id, this.req.ip);
+              } catch (error) {
+                  // Handle error
+                  console.error("Error updating request log:", error);
+              }
+          }
+  
+          this.res.status(this._statusCode).json(response);
+          resolve();
+      });
+  }
+  
 
     // Return corretly projectId by user role
     // Validation to prevent unauthorized user requests to project IDs outside of their authorization
@@ -99,7 +121,7 @@ class HTTPResponsePatternModel{
           let authHeader = req.headers['authorization'];          
 
           const fnUnauthorized = function(){            
-            let response = new HTTPResponsePatternModel();
+            let response = new HTTPResponsePatternModel(req,res);
 
             response.set(401, false);
             return response.sendResponse(res);

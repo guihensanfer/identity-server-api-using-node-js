@@ -50,7 +50,7 @@ const httpP = require('../../models/httpResponsePatternModel');
  *                   type: integer
  */
 router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
-    let response = new httpP.HTTPResponsePatternModel();
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket();        
     const { page } = req.query;
     const currentPage = parseInt(page) || httpP.DEFAULT_PAGE;
@@ -72,18 +72,18 @@ router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), asyn
 
         if (currentPage > totalPages && totalPages !== 0) {
             response.set(404, false);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
 
         response.set(200, true, null, result.rows);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     } catch (err) {
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err,currentTicket);
 
         await db.errorLogInsert(errorModel);
       
         response.set(500, false, [err.message]);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
 });
 

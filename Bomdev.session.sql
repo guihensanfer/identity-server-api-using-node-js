@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS ErrorLogs (
     INDEX IDXuserID (userID),   
     INDEX IDXticket (ticket),    
      
-    FOREIGN KEY (userID) REFERENCES Users(userID)
+    FOREIGN KEY (userID) REFERENCES Users(userID),    
+
+    FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
 );
 
 drop procedure if exists USP_ErrorLogs_INSERT
@@ -100,33 +102,38 @@ BEGIN
     DEALLOCATE PREPARE stmt;
 END
 
-drop table ProcedureStatistics
-CREATE TABLE ProcedureStatistics (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+drop table OperationLogs
+CREATE TABLE OperationLogs (
+    operationLogId INT AUTO_INCREMENT PRIMARY KEY,
     procedure_name VARCHAR(255) NOT NULL,
     execution_time_ms INT NOT NULL,
     execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ticket varchar(50) null,
     sqlCall LONGTEXT null,
     successfully bit not null,
+    is_checkpoint bit DEFAULT 0,
     INDEX (procedure_name),
     INDEX (execution_date),
-    INDEX (ticket)
+    INDEX (ticket),
+    INDEX (is_checkpoint),    
+
+    FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
 );
 
-drop procedure USP_ProcedureStatistics_Insert
-CREATE PROCEDURE USP_ProcedureStatistics_Insert (
+drop procedure USP_OperationLogs_Insert
+CREATE PROCEDURE USP_OperationLogs_Insert (
     IN p_procedureName VARCHAR(255),
     IN p_executionTime INT,
     IN p_sqlCall LONGTEXT,
     IN p_ticket varchar(50),
-    IN p_successfully bit
+    IN p_successfully bit,    
+    IN p_is_checkpoint bit
 )
 BEGIN
-    INSERT INTO ProcedureStatistics (procedure_name, execution_time_ms, sqlCall, ticket, successfully)
-    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket, p_successfully);
+    INSERT INTO OperationLogs (procedure_name, execution_time_ms, sqlCall, ticket, successfully, is_checkpoint)
+    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket, p_successfully, p_is_checkpoint);
 
-    DELETE FROM ProcedureStatistics
+    DELETE FROM OperationLogs
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END
 
@@ -295,3 +302,7 @@ select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' ord
 select * from EmailLogs order by emailLogId desc
 
 update Users set emailConfirmed = 1
+select * from httprequestslogs where ticket = 'c710282b-e942-4459-8459-36f49ac09373' order by createdAt desc
+
+select * from OperationLogs where ticket = 'c710282b-e942-4459-8459-36f49ac09373' order by operationLogId desc
+select * from errorLogs order by errorID desc

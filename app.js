@@ -10,7 +10,6 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 const db = require('./db');
 const RolesModel = require('./models/rolesModel');
-const authService = require('./services/authService');
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -113,10 +112,26 @@ app.use('/api/v1/projects', projectsController);
     const Projects = require('./repositories/projectsRepository');
     const DocumentTypes = require('./repositories/documentTypesRepository');
     const Users = require('./repositories/authRepository');
+    const HttpRequestsLogs = require('./repositories/httpRequestsLogs');
     const Roles = require('./repositories/rolesRepository');
     const UsersRoles = require('./repositories/usersRolesRepository');
 
     await db._sequealize.sync();    
+
+    await HttpRequestsLogs.data.findCreateFind({
+        where: {
+            ticket: 'Default'
+        },
+        defaults:{
+            ticket: 'Default',
+            requestEndDate: new Date(),
+            requestPath: 'System',
+            requestIp: null,
+            ownerUserId: null,
+            requestCompletionStatus: 0,
+            requestMethod: 'SYS'
+        }
+    });    
 
     await Projects.data.findCreateFind({
         where: {

@@ -9,6 +9,9 @@ const MAX_DOCUMENT_LENGTH = 50;
 const MAX_LANGUAGE_LENGTH = 50;
 const MAX_PICTURE_LENGTH = 200;
 const idb = require('../interfaces/idb');
+const httpP = require('../models/httpResponsePatternModel');
+const UsersRoles = require('../repositories/usersRolesRepository');
+const Roles = require('../repositories/rolesRepository');
 
 const data = db._sequealize.define('Users', {
   userId: {
@@ -83,6 +86,65 @@ const data = db._sequealize.define('Users', {
   ],
 });
 
+// Checkpoint method
+async function createUser(userData, userRoleName, ticket) {  
+  const transaction = await data.sequelize.transaction();
+  const operationLog = new db.OperationLogs("CREATE_USER_METHOD", null, ticket, true);
+  let successfully = true; 
+
+  try {
+    const rolesProcs = new Roles.Procs(ticket);
+
+    const createdUser = await data.create({
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      password: null,
+      document: null,
+      documentTypeId: null,
+      projectId: userData.projectId,
+      defaultLanguage: userData?.defaultLanguage?.trim(),
+      picture: userData?.picture
+    }, {
+      attributes: ['userId'],
+      transaction // Passando a transação para a operação de criação do usuário
+    });
+
+    const userId = createdUser.userId;
+
+    if (createdUser) {
+      const roleId = await rolesProcs.getRoleIdByName(userRoleName, { transaction });
+
+      const userRole = await UsersRoles.data.create({
+        userId: userId,
+        roleId: roleId
+      }, {
+        transaction // Passando a transação para a operação de criação do papel do usuário
+      });
+
+      if (!userRole) {
+        throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User Role'));
+      }
+    } else {
+      throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User'));
+    }
+
+    // Confirmar a transação
+    await transaction.commit();    
+
+    return userId;
+  } catch (error) {
+    successfully = false;
+    await transaction.rollback();
+    throw error;
+  }
+  finally{
+    // create a checkpoint log
+    await operationLog.commit(successfully);
+  }
+}
+
+
 class Procs extends idb{
   constructor(ticket){
     super(ticket);
@@ -127,6 +189,7 @@ class Procs extends idb{
 
 
 module.exports = {
+  createUser,
   data,
   Procs,
   MAX_FIRSTNAME_LENGTH,

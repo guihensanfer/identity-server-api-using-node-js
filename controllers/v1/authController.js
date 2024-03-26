@@ -3,7 +3,6 @@ const _ = require('lodash');
 const Auth = require('../../repositories/authRepository');
 const util = require('../../services/utilService');
 const mail = require('../../services/mailService');
-const authService = require('../../services/authService');
 const DocumentTypesModel = require('../../models/documentTypesModel');
 const RolesModel = require('../../models/rolesModel');
 const Projects = require('../../repositories/projectsRepository');
@@ -16,7 +15,6 @@ const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
-const AuthServices = require('../../services/authService');
 const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
@@ -82,7 +80,7 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  */
 // router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
 router.post('/register', async (req, res) => {      
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        
     let errors = [];  
@@ -94,7 +92,7 @@ router.post('/register', async (req, res) => {
         if (Object.keys(req.body).length === 0) {
             response.set(400,false);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
 
         // First Name
@@ -182,7 +180,7 @@ router.post('/register', async (req, res) => {
         if(errors && errors.length > 0){
             response.set(422,false, errors);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
     
     
@@ -190,40 +188,21 @@ router.post('/register', async (req, res) => {
         let salt = await bcrypt.genSaltSync(12);
         let passwordHash = await bcrypt.hashSync(password, salt);
 
-        // Create user
-        let user = await Auth.data.create({
-            firstName: firstName.trim(),
-            lastName: lastName?.trim(),
-            email: email?.trim(),
-            password: passwordHash,
-            document: document.documentValue?.trim(),
-            documentTypeId: document.documentTypeId,
-            projectId: projectId,
-            defaultLanguage: defaultLanguage?.trim(),
-            picture: picture?.trim()
-        });
-
-        // Create permission
-        if(user){
-            let userId = user.userId;
-            let roleId = await rolesProcs.getRoleIdByName(RolesModel.ROLE_USER);
-
-            let userRole = await UsersRoles.data.create({
-                userId: userId,
-                roleId: roleId
-            });
-
-            if(!userRole){
-                throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('user role'));
-            }
-        }
-        else
-        {
-            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('user'));
-        }
+        // Create user and all anothers relationships
+        await Auth.createUser({
+                firstName: firstName.trim(),
+                lastName: lastName?.trim(),
+                email: email?.trim(),
+                password: passwordHash,
+                document: document.documentValue?.trim(),
+                documentTypeId: document.documentTypeId,
+                projectId: projectId,
+                defaultLanguage: defaultLanguage?.trim(),
+                picture: picture?.trim()
+            }, RolesModel.ROLE_USER, currentTicket);        
 
         response.set(201, true, null, null, 'The creation was successful. An email confirmation has been sent to the user.');
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
     catch(err){
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -231,7 +210,7 @@ router.post('/register', async (req, res) => {
         await db.errorLogInsert(errorModel);
 
         response.set(500, false, [err.message]);      
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }    
 });
 
@@ -314,7 +293,7 @@ router.post('/register', async (req, res) => {
  *         description: Internal Server Error.
  */
 router.post('/login', async (req, res) => {    
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();      
     const currentTicket = response.getTicket(); 
     var { 
         email, password, projectId, continueWithToken
@@ -329,7 +308,7 @@ router.post('/login', async (req, res) => {
         if (Object.keys(req.body).length === 0) {
             response.set(400,false);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         
         if(_.isNull(continueWithToken) || _.isEmpty(continueWithToken)){
@@ -372,14 +351,14 @@ router.post('/login', async (req, res) => {
         {
             if(email || password || projectId){
                 response.set(400, false, null, null, "Send only token without including any additional attributes.");
-                return await response.sendResponse(res);
+                return await response.sendResponse();
             }
 
             const userID = await authProcs.userTokenVerify(continueWithToken, req.ip);
 
             if(!userID || userID <= 0){
                 response.set(401, false);
-                return await response.sendResponse(res);
+                return await response.sendResponse();
             }
 
             const user = await Auth.data.findOne({
@@ -390,7 +369,7 @@ router.post('/login', async (req, res) => {
 
             if(!user){
                 response.set(401, false);
-                return await response.sendResponse(res);
+                return await response.sendResponse();
             }            
 
             email = user.email;
@@ -401,7 +380,7 @@ router.post('/login', async (req, res) => {
         // ----- Check for errors
         if(errors && errors.length > 0){
             response.set(422, false, errors);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
     
         // Check user
@@ -414,21 +393,21 @@ router.post('/login', async (req, res) => {
 
         if(!user){
             response.set(404, false);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         else if(!user.enabled){
             response.set(401, false, null, null, "The account is locked out.");
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         else if(!user.emailConfirmed){
             response.set(401, false, null, null, "Email is not confirmed.");
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         else if(byPassword) {
             let checkPassword = await bcrypt.compare(password, user.password);
             if(!checkPassword){
                 response.set(401, false);
-                return await response.sendResponse(res);
+                return await response.sendResponse();
             }            
         }
 
@@ -475,7 +454,7 @@ router.post('/login', async (req, res) => {
         };
 
         response.set(200, true, null, result);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
     catch(err){                 
         const errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -483,7 +462,7 @@ router.post('/login', async (req, res) => {
         await db.errorLogInsert(errorModel);
       
         response.set(500, false, [err.message]);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     } 
 });
 
@@ -511,7 +490,7 @@ router.post('/login', async (req, res) => {
  *         description: Internal Server Error.
  */
 router.get('/login/external/redirect', async (req, res) => {    
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket();            
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);   
@@ -529,7 +508,7 @@ router.get('/login/external/redirect', async (req, res) => {
         // ----- Check for errors
         if(errors && errors.length > 0){
             response.set(422, false, errors);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }                                  
         
         // Check token
@@ -537,7 +516,7 @@ router.get('/login/external/redirect', async (req, res) => {
         
         if(!tokenRedirect || tokenRedirect.result <= 0 || !tokenRedirect.data || _.isNull(tokenRedirect.data) || _.isEmpty(tokenRedirect.data)){
             response.set(401, false);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }        
 
         // Redirect to external uri with custom parameter token
@@ -549,7 +528,7 @@ router.get('/login/external/redirect', async (req, res) => {
         await db.errorLogInsert(errorModel);
 
         response.set(500, false, [err.message]);      
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }    
 });
 
@@ -615,7 +594,7 @@ router.get('/login/external/redirect', async (req, res) => {
  *         description: Internal Server Error.
  */
 router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     var { redirectUri } = req.body;        
     let errors = [];  
@@ -628,7 +607,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         if (Object.keys(req.body).length === 0) {
             response.set(400,false);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
 
         // Redirect Uri
@@ -663,7 +642,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         // ----- Check for errors
         if(errors && errors.length > 0){
             response.set(422, false, errors);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }                                  
         
         // Create tokens
@@ -690,7 +669,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         }
         response.set(200, true, null, result);
 
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
     catch(err){
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -698,12 +677,12 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         await db.errorLogInsert(errorModel);
 
         response.set(500, false, [err.message]);      
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }    
 });
 
 router.get('/login/external/google/callback', async (req, res) => {
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -742,12 +721,12 @@ router.get('/login/external/google/callback', async (req, res) => {
                 if(!redirectUri)
                 {
                     response.set(400, false, null, null, 'Invalid origin data redirect uri.');      
-                    return await response.sendResponse(res);    
+                    return await response.sendResponse();    
                 }
 
                 if(!projectId || projectId <= 0){
                     response.set(400, false, null, null, 'Invalid origin project id.');      
-                    return await response.sendResponse(res);    
+                    return await response.sendResponse();    
                 }
 
                 let user = await Auth.data.findOne({                
@@ -760,11 +739,10 @@ router.get('/login/external/google/callback', async (req, res) => {
 
                 if(!user){
                     // User not exists, then create user with basic profile from Google
-
-                    const authS = new authService(currentTicket);
+                   
 
                     // Create user and others relationship
-                    const newUserId = await authS.createUser({
+                    const newUserId = await Auth.createUser({
                         firstName: profile.given_name,
                         lastName: profile.family_name,
                         email: profile.email,
@@ -774,7 +752,7 @@ router.get('/login/external/google/callback', async (req, res) => {
                         projectId: projectId,
                         defaultLanguage: profile.locale?.trim(),
                         picture: profile.picture
-                    }, RolesModel.ROLE_USER);                    
+                    }, RolesModel.ROLE_USER, currentTicket);                    
 
                     user = await Auth.data.findOne({                
                         where:{
@@ -811,7 +789,7 @@ router.get('/login/external/google/callback', async (req, res) => {
             else
             {
                 response.set(400, false, null, null, 'Invalid origin provider.');      
-                return await response.sendResponse(res);
+                return await response.sendResponse();
             }
         }
       }
@@ -823,7 +801,7 @@ router.get('/login/external/google/callback', async (req, res) => {
         await db.errorLogInsert(errorModel);
       
         response.set(500, false, [err.message]);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
   });
 
@@ -890,7 +868,7 @@ router.get('/login/external/google/callback', async (req, res) => {
  *         description: Internal Server Error.
  */
 router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
         email, projectId, clientUri
@@ -903,7 +881,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         if (Object.keys(req.body).length === 0) {
             response.set(400,false);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         
          // Email
@@ -946,7 +924,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         // ----- Check for errors
         if(errors && errors.length > 0){
             response.set(422, false, errors);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
     
         // Check user
@@ -959,7 +937,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
 
         if(!user){
             response.set(404, false);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }        
 
         // Create token
@@ -999,7 +977,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         mail.sendEmail(mailOptions, projectId, currentTicket);
 
         response.set(200, true, null, null);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
     catch(err){                 
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -1007,7 +985,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         await db.errorLogInsert(errorModel);
       
         response.set(500, false, [err.message]);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     } 
 });
 
@@ -1070,7 +1048,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *         description: Internal Server Error.
  */
 router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
         token, newPassword
@@ -1083,7 +1061,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         if (Object.keys(req.body).length === 0) {
             response.set(400,false);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         
          // Token
@@ -1104,7 +1082,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         // ----- Check for errors
         if(errors && errors.length > 0){
             response.set(422, false, errors);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
     
         // Check token
@@ -1112,7 +1090,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
 
         if(!_userID || _userID <= 0){
             response.set(401, false);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }         
 
         // Create password
@@ -1128,7 +1106,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }});      
 
         response.set(200, true, null, null);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
     catch(err){                 
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -1136,7 +1114,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         await db.errorLogInsert(errorModel);
       
         response.set(500, false, [err.message]);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     } 
 });
 
@@ -1207,7 +1185,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *         description: Internal Server Error.
  */
 router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
-    let response = new httpP.HTTPResponsePatternModel();  
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();       
     let currentTicket = response.getTicket(); 
     var { 
         email, projectId, clientUri
@@ -1220,7 +1198,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         if (Object.keys(req.body).length === 0) {
             response.set(400,false);
 
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
         
          // Email
@@ -1263,7 +1241,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         // ----- Check for errors
         if(errors && errors.length > 0){
             response.set(422, false, errors);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }
     
         // Check user
@@ -1276,7 +1254,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
 
         if(!user){
             response.set(404, false);
-            return await response.sendResponse(res);
+            return await response.sendResponse();
         }        
 
         // Create token
@@ -1316,7 +1294,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         mail.sendEmail(mailOptions, projectId);
 
         response.set(200, true, null, null);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     }
     catch(err){                 
         let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
@@ -1324,7 +1302,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         await db.errorLogInsert(errorModel);
       
         response.set(500, false, [err.message]);
-        return await response.sendResponse(res);
+        return await response.sendResponse();
     } 
 });
 
