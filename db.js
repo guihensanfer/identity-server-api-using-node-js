@@ -90,7 +90,7 @@ async function errorLogInsert (errorLogModel){
   ]);
 }
 
-async function executeProcedure(procedureName, params = [], ticket = 'Default'){    
+async function executeProcedure(procedureName, params = [], ticket = 'Default', isLogCheckpoint = false){    
   const placeholders = params?.map(() => '?').join(',');
   const callProcedure = `CALL ${procedureName}(${placeholders})`;  
   let successfully = true; 
@@ -116,7 +116,7 @@ async function executeProcedure(procedureName, params = [], ticket = 'Default'){
   const operationLog = new OperationLogs(procedureName,
     `CALL ${procedureName}(${formattedParams?.join(',')})`,
     ticket,
-    false);
+    isLogCheckpoint);
 
   try {                   
     const results = await pool.promise().query(callProcedure, formattedParams);

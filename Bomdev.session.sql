@@ -219,15 +219,18 @@ CREATE TABLE IF NOT EXISTS EmailLogs (
     projectId int not null,
     successfully bit,
     result_object JSON,
+    ticket varchar(50) not null,
 
-    FOREIGN KEY (projectId) REFERENCES Projects(projectId)
+    FOREIGN KEY (projectId) REFERENCES Projects(projectId),
+    FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
 );
 
+
 drop procedure if exists USP_InsertEmailLog
-CREATE PROCEDURE USP_InsertEmailLog(IN p_to_address VARCHAR(255), IN p_subject VARCHAR(255), IN p_body LONGTEXT, IN p_projectId int, p_result_object JSON, p_successfully bit)
+CREATE PROCEDURE USP_InsertEmailLog(IN p_to_address VARCHAR(255), IN p_subject VARCHAR(255), IN p_body LONGTEXT, IN p_projectId int, p_result_object JSON, p_successfully bit, p_ticket varchar(50))
 BEGIN
-    INSERT INTO EmailLogs (to_address, subject, body, projectid, result_object, successfully)
-    VALUES (p_to_address, p_subject, p_body, p_projectId, p_result_object, p_successfully);
+    INSERT INTO EmailLogs (to_address, subject, body, projectid, result_object, successfully,ticket)
+    VALUES (p_to_address, p_subject, p_body, p_projectId, p_result_object, p_successfully,p_ticket);
 
     DELETE FROM EmailLogs
     WHERE try_sent_at < DATE_SUB(NOW(), INTERVAL 6 MONTH);
@@ -302,7 +305,9 @@ select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' ord
 select * from EmailLogs order by emailLogId desc
 
 update Users set emailConfirmed = 1
-select * from httprequestslogs where ticket = 'c710282b-e942-4459-8459-36f49ac09373' order by createdAt desc
+select * from httprequestslogs  order by createdAt desc
 
-select * from OperationLogs where ticket = 'c710282b-e942-4459-8459-36f49ac09373' order by operationLogId desc
+select * from OperationLogs 
+
+order by operationLogId desc
 select * from errorLogs order by errorID desc

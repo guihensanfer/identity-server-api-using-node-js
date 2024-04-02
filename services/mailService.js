@@ -8,7 +8,11 @@ function sendEmail(transporterOptions, mailOptions, projectId, ticket) {
       const successfully = error == null;
       
       // Save log email sent
-      await db.executeProcedure('USP_InsertEmailLog', [mailOptions.to, mailOptions.subject, mailOptions.html, projectId, error ?? info, successfully], ticket);
+      await db.executeProcedure('USP_InsertEmailLog', 
+        [mailOptions.to, mailOptions.subject, mailOptions.html, projectId, error ?? info, successfully, ticket], 
+        ticket,
+        true
+      );
     });
 }
 
@@ -38,14 +42,17 @@ if (isMainThread) {
                 });
 
                 worker.on('message', (message) => {
+                    console.log(message);
                     resolve(message);
                 });
 
                 worker.on('error', (error) => {
+                    console.log(error);
                     reject(error);
                 });
 
                 worker.on('exit', (code) => {
+                    console.log(code);
                     if (code !== 0) {
                         reject(new Error(`A thread do worker terminou com código de saída: ${code}`));
                     }
