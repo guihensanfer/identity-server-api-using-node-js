@@ -6,9 +6,6 @@
     3 adicionar coluna is_checkpoint na tabela OperationLogs
     4 Mudar procs para o novo nome de tabela
     5 Mudar back para incluir a nova coluna
-    6 
-
-
 
 -- OK TESTADO testar picture em auth/register
 

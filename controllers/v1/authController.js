@@ -1098,12 +1098,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         let passwordHash = await bcrypt.hashSync(newPassword, salt);
 
         // Update the password
-        await Auth.data.update({
-            password: passwordHash
-        }, {
-            where: {
-                userId:_userID
-        }});      
+        await Auth.resetPassword(_userID, passwordHash, currentTicket);
 
         response.set(200, true, null, null);
         return await response.sendResponse();

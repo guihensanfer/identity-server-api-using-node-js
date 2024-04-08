@@ -87,6 +87,43 @@ const data = db._sequealize.define('Users', {
 });
 
 // Checkpoint method
+async function resetPassword(userId, newPasswordHash, ticket, confirmEmailUser = true) {  
+  const transaction = await data.sequelize.transaction();
+  const operationLog = new db.OperationLogs("RESET_USER_PASSWORD_METHOD", "userId:" + userId.toString(), ticket, true);
+  let successfully = true; 
+
+  try {    
+    await data.update({
+      password: newPasswordHash
+    }, {
+        where: {
+            userId:userId
+    }});
+
+    if(confirmEmailUser){
+      await data.update({
+        emailConfirmed: true
+      }, {
+          where: {
+              userId:userId
+      }});
+    }
+
+    // Confirmar a transação
+    await transaction.commit();    
+    
+  } catch (error) {
+    successfully = false;
+    await transaction.rollback();
+    throw error;
+  }
+  finally{
+    // create a checkpoint log
+    await operationLog.commit(successfully);
+  }
+}
+
+// Checkpoint method
 async function createUser(userData, userRoleName, ticket) {  
   const transaction = await data.sequelize.transaction();
   const operationLog = new db.OperationLogs("CREATE_USER_METHOD", null, ticket, true);
@@ -189,6 +226,7 @@ class Procs extends idb{
 
 
 module.exports = {
+  resetPassword,
   createUser,
   data,
   Procs,
