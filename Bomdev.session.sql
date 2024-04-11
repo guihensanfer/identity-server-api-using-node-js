@@ -311,3 +311,5 @@ select * from OperationLogs
 
 order by operationLogId desc
 select * from errorLogs order by errorID desc
+
+update Users set emailConfirmed = 0

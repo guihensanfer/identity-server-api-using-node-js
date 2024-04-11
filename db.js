@@ -1,6 +1,7 @@
 const mysql = require('mysql2');
 const ErrorLogModel = require('./models/errorLogModel');
 const util = require('./services/utilService');
+const thread = require('./services/threadService');
 const Sequelize = require('sequelize');
 const _sequealize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   dialect:'mysql',
@@ -52,7 +53,7 @@ async function operationLogsInsert (ticket,
   timeElapsed,
   sqlCall,
   successfully,
-  is_checkpoint){  
+  is_checkpoint){      
   
   await executeProcedure(STATISTICS_PROCEDURE_NAME, [
     procedureName, 

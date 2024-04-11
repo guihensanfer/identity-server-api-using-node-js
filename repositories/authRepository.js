@@ -98,7 +98,8 @@ async function resetPassword(userId, newPasswordHash, ticket, confirmEmailUser =
     }, {
         where: {
             userId:userId
-    }});
+    }},
+    transaction);
 
     if(confirmEmailUser){
       await data.update({
@@ -106,7 +107,8 @@ async function resetPassword(userId, newPasswordHash, ticket, confirmEmailUser =
       }, {
           where: {
               userId:userId
-      }});
+      }},
+      transaction);
     }
 
     // Confirmar a transação
