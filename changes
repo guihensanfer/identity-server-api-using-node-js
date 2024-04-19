@@ -1,17 +1,9 @@
 02/04/2024 - dar continuidade aos testes com /forget nao esta enviando email na thread
 
--- esboço projeto operationLogs com httprequestsLogs
-    1 criar tabela HttpRequestsLogs onde salvará httpRequestLogId, ticket, requestDate, requestFinishedDate, requestPath, requestIp, ownerOperationUserId
-    2 mudar nome tabela ProcedureStatistics para OperationLogs
-    3 adicionar coluna is_checkpoint na tabela OperationLogs
-    4 Mudar procs para o novo nome de tabela
-    5 Mudar back para incluir a nova coluna
-
 -- OK TESTADO testar picture em auth/register
 
 
 pendencias:
-* ok resolvido email nao ta passando ticket
 * validar swagger campos requireds
 * após o cadastro enviar email de confirmacao
     * TESTAR no retorno de created 201 melhorar descrição dizendo que foi enviado email
