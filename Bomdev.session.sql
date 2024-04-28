@@ -1,19 +1,19 @@
-drop procedure USP_TEST
+drop procedure if exists USP_TEST;
 create procedure if not exists USP_TEST()
 begin
     select 'ITS IS WORKING' as result;
-end
+end;
 
-drop procedure USP_TEST2
+drop procedure if exists USP_TEST2;
 create procedure USP_TEST2(in parameter varchar(200))
 begin
     select concat('ITS IS WORKING ', parameter) as result;
     select concat('ITS IS WORKING 2', parameter) as result;
 
     
-end
+end;
 
-drop table if exists ErrorLogs
+drop table if exists ErrorLogs;
 CREATE TABLE IF NOT EXISTS ErrorLogs (
     errorID INT AUTO_INCREMENT PRIMARY KEY,
     errorTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS ErrorLogs (
     FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
 );
 
-drop procedure if exists USP_ErrorLogs_INSERT
+drop procedure if exists USP_ErrorLogs_INSERT;
 CREATE PROCEDURE IF NOT EXISTS USP_ErrorLogs_INSERT(
     IN p_errorMessage TEXT,
     IN p_errorCode INT,
@@ -70,9 +70,9 @@ BEGIN
     );
 
     DELETE FROM ErrorLogs WHERE errorTime < DATE_SUB(NOW(), INTERVAL 6 MONTH);
-END 
+END;
 
-drop procedure if exists USP_USERS_SELECT_EXISTS
+drop procedure if exists USP_USERS_SELECT_EXISTS;
 create procedure if not exists USP_USERS_SELECT_EXISTS(
     in _email varchar(200),
     in _projectId int
@@ -81,7 +81,7 @@ begin
     select count(1) as result from Users u 
     where u.email = IFNULL(_email, u.email) 
     and u.projectId = IFNULL(_projectId, u.projectId);
-end
+end;
 
 drop procedure if exists USP_Roles_GET_BY_NAME;
 CREATE PROCEDURE IF NOT EXISTS USP_Roles_GET_BY_NAME(
@@ -89,7 +89,7 @@ CREATE PROCEDURE IF NOT EXISTS USP_Roles_GET_BY_NAME(
 )
 BEGIN
     select roleId from Roles where name = p_roleName;
-END
+END;
 
 drop procedure if exists USP_Roles_GET_BY_ID;
 CREATE PROCEDURE IF NOT EXISTS USP_Roles_GET_BY_ID(
@@ -100,9 +100,9 @@ BEGIN
     PREPARE stmt FROM @query;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
-END
+END;
 
-drop table if exists OperationLogs
+drop table if EXISTS OperationLogs;
 CREATE TABLE OperationLogs (
     operationLogId INT AUTO_INCREMENT PRIMARY KEY,
     procedure_name VARCHAR(255) NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE OperationLogs (
     FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
 );
 
-drop procedure if exists USP_OperationLogs_Insert
+drop procedure if exists USP_OperationLogs_Insert;
 CREATE PROCEDURE USP_OperationLogs_Insert (
     IN p_procedureName VARCHAR(255),
     IN p_executionTime INT,
@@ -135,9 +135,9 @@ BEGIN
 
     DELETE FROM OperationLogs
     WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
-END
+END;
 
-drop table if exists UserToken
+drop table if exists UserToken;
 CREATE TABLE UserToken (
     userTokenId INT AUTO_INCREMENT PRIMARY KEY,
     userID int NOT NULL,
@@ -151,7 +151,7 @@ CREATE TABLE UserToken (
     FOREIGN KEY (userID) REFERENCES Users(userID)
 );
 
-drop procedure USP_UserToken_Insert
+drop procedure if exists USP_UserToken_Insert;
 CREATE PROCEDURE USP_UserToken_Insert (
     IN p_userID INT,
     IN p_requestIP VARCHAR(50) ,
@@ -171,9 +171,9 @@ BEGIN
     WHERE expiredAt < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 
     select newToken as result;
-END
+END;
 
-drop procedure USP_UserToken_Check
+drop procedure if exists USP_UserToken_Check;
 CREATE PROCEDURE USP_UserToken_Check (
     IN p_token VARCHAR(50),    
     IN p_requestIP VARCHAR(50)
@@ -207,9 +207,9 @@ BEGIN
 
     -- Limpando a tabela temporária
     DROP TEMPORARY TABLE IF EXISTS tempResult;
-END
+END;
 
-drop table if exists EmailLogs
+drop table if exists EmailLogs;
 CREATE TABLE IF NOT EXISTS EmailLogs (
     emailLogId INT AUTO_INCREMENT PRIMARY KEY,
     to_address VARCHAR(255) NOT NULL,
@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS EmailLogs (
 );
 
 
-drop procedure if exists USP_InsertEmailLog
+drop procedure if exists USP_InsertEmailLog;
 CREATE PROCEDURE USP_InsertEmailLog(IN p_to_address VARCHAR(255), IN p_subject VARCHAR(255), IN p_body LONGTEXT, IN p_projectId int, p_result_object JSON, p_successfully bit, p_ticket varchar(50))
 BEGIN
     INSERT INTO EmailLogs (to_address, subject, body, projectid, result_object, successfully,ticket)
@@ -234,15 +234,22 @@ BEGIN
 
     DELETE FROM EmailLogs
     WHERE try_sent_at < DATE_SUB(NOW(), INTERVAL 6 MONTH);
-END 
+END;
 
-alter table Users add enabled bit default 1;
-alter table UserToken add enabled bit not null default 1;
-alter table UserToken add disabledDate datetime null;
-alter table Users add picture varchar(200) null;
-alter table UserToken add data varchar(500) null;
+alter table Users add if not exists emailConfirmed bit default 0;
+alter table Users add if not exists enabled bit default 1;
+alter table UserToken add if not exists  enabled bit not null default 1;
+alter table UserToken add if not exists  disabledDate datetime null;
+alter table Users add if not exists  picture varchar(200) null;
+alter table UserToken add if not exists data varchar(500) null;
 
+SET foreign_key_checks = 0;
+truncate table ErrorLogs;
+truncate table Users;
+
+SET foreign_key_checks = 1;
 -- end script
+
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc
