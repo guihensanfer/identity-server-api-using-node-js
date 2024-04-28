@@ -102,7 +102,7 @@ BEGIN
     DEALLOCATE PREPARE stmt;
 END
 
-drop table OperationLogs
+drop table if exists OperationLogs
 CREATE TABLE OperationLogs (
     operationLogId INT AUTO_INCREMENT PRIMARY KEY,
     procedure_name VARCHAR(255) NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE OperationLogs (
     FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
 );
 
-drop procedure USP_OperationLogs_Insert
+drop procedure if exists USP_OperationLogs_Insert
 CREATE PROCEDURE USP_OperationLogs_Insert (
     IN p_procedureName VARCHAR(255),
     IN p_executionTime INT,
@@ -236,12 +236,13 @@ BEGIN
     WHERE try_sent_at < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END 
 
-alter table Users add emailConfirmed bit default 0;
 alter table Users add enabled bit default 1;
 alter table UserToken add enabled bit not null default 1;
 alter table UserToken add disabledDate datetime null;
 alter table Users add picture varchar(200) null;
 alter table UserToken add data varchar(500) null;
+
+-- end script
 
 -- select * from ProcedureStatistics 
 -- order by execution_date desc
@@ -252,9 +253,9 @@ select * from ErrorLogs order by errortime desc
 -- select * from UserRefreshToken
 
 -- call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');
--- SET foreign_key_checks = 0;
--- drop table Users
--- SET foreign_key_checks = 1;
+SET foreign_key_checks = 0;
+drop table Users
+SET foreign_key_checks = 1;
 
 select * from Roles
 select * from UsersRoles where userId = 2
@@ -310,6 +311,6 @@ select * from httprequestslogs  order by createdAt desc
 select * from OperationLogs 
 
 order by operationLogId desc
-select * from errorLogs order by errorID desc
+select * from ErrorLogs order by errorID desc
 
 update Users set emailConfirmed = 0

@@ -48,7 +48,8 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  *               picture:
  *                 type: string
  *                 description: Picture url
- *                 maxLength: 200
+ *                 maxLength: 200,
+ *                 example: https://exemple.com.br/picture/example.png
  *               document:
  *                 type: object
  *                 properties:
