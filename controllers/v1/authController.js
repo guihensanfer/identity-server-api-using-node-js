@@ -22,7 +22,7 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  * /auth/register:
  *   post:
  *     summary: Register an user.
- *     description: Register a Bomdev user.
+ *     description: Register an user for your Bomdev application.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -52,13 +52,16 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  *                 example: https://exemple.com.br/picture/example.png
  *               document:
  *                 type: object
+ *                 description: Check id in Document Types endpoint.
  *                 properties:
  *                   documentTypeId:
  *                     type: integer
  *                     description: ID of the document type
+ *                     example: 1
  *                   documentValue:
  *                     type: string
  *                     description: Value of the document
+ *                     example: 91313034045
  *               defaultLanguage:
  *                 type: string
  *                 example: pt-br
@@ -66,12 +69,14 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  *             required:
  *               - firstName
  *               - email
- *               - projectId
+ *               - lastName
+ *               - password
+ *               - document
  *     security:
  *       - JWT: []
  *     responses:
  *       '201':
- *         description: User successfully created.
+ *         description: The creation was successful. An email confirmation has been sent to the user.
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -79,8 +84,8 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  *       '500':
  *         description: Internal Server Error.
  */
-// router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
-router.post('/register', async (req, res) => {      
+router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
+// router.post('/register', async (req, res) => {      
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        
@@ -140,7 +145,7 @@ router.post('/register', async (req, res) => {
         }  
 
         // ProjectId
-        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
 
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
@@ -351,7 +356,7 @@ router.post('/login', async (req, res) => {
         else
         {
             if(email || password || projectId){
-                response.set(400, false, null, null, "Send only token without including any additional attributes.");
+                response.set(400, false, null, null, "Send only token without including any additional attributes (remove 'continueWithToken' from your request).");
                 return await response.sendResponse();
             }
 
@@ -623,7 +628,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         }
 
         // ProjectId
-        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
 
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
@@ -897,7 +902,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
         }          
 
         // ProjectId
-        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
         }
@@ -1209,7 +1214,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         }          
 
         // ProjectId
-        projectId = httpP.HTTPResponsePatternModel.verifyProjectId(req, projectId);
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
         }

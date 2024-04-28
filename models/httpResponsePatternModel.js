@@ -106,7 +106,7 @@ class HTTPResponsePatternModel{
 
     // Return corretly projectId by user role
     // Validation to prevent unauthorized user requests to project IDs outside of their authorization
-    static verifyProjectId(req, bodyProjectId){
+    static verifyProjectIdOrDefault(req, bodyProjectId){
       if(!req || !req.user || !req.user.projectId)
         return bodyProjectId;
 

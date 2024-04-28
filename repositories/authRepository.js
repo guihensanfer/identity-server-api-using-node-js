@@ -138,9 +138,9 @@ async function createUser(userData, userRoleName, ticket) {
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
-      password: null,
-      document: null,
-      documentTypeId: null,
+      password: userData?.password,
+      document: userData?.document,
+      documentTypeId: userData?.documentTypeId,
       projectId: userData.projectId,
       defaultLanguage: userData?.defaultLanguage?.trim(),
       picture: userData?.picture

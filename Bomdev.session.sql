@@ -296,6 +296,7 @@ SHOW CREATE TABLE ErrorLogs;
 
 update Users set emailConfirmed=1 where userId=1
 select * from UsersRoles 
+
 update UsersRoles set roleId = 1 where userId = 1
 
 call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
