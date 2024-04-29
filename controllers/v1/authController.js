@@ -225,7 +225,7 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  * /auth/login:
  *   post:
  *     summary: Log in.
- *     description: Log in an user.
+ *     description: Log in user.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -283,10 +283,11 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  *                     refreshToken:
  *                       type: string
  *                       description: Use the refresh token for seamless future authentication. If you wish to utilize the refresh token for logging in, include only the refresh token in your request.
- *                     expiredRefreshAt:
+ *                     refreshExpiredAt:
  *                       type: string
  *                       format: date-time
  *                       description: Refresh token expiration date and time
+ * 
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -816,8 +817,8 @@ router.get('/login/external/google/callback', async (req, res) => {
  * @swagger
  * /auth/forgetpassword:
  *   post:
- *     summary: Generate and send an email with a token to complete the reset password operation.
- *     description: It is the first step, generate and send an email with a link to click and complete the reset password operation.
+ *     summary: Generate and send an email with a token
+ *     description: It is the first step, generate and send an email with a link to click and complete the resetpassword endpoint.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -834,6 +835,9 @@ router.get('/login/external/google/callback', async (req, res) => {
  *               clientUri:
  *                 type: string
  *                 example: https://example.com.br
+ *             required:
+ *               - email
+ *               - clientUri
  *     security:
  *       - JWT: []
  *     responses:

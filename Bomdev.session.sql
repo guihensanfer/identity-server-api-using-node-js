@@ -321,4 +321,4 @@ select * from OperationLogs
 order by operationLogId desc
 select * from ErrorLogs order by errorID desc
 
-update Users set emailConfirmed = 0
+update Users set emailConfirmed = 1
