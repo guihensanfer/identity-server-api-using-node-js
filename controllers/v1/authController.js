@@ -1004,7 +1004,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  * /auth/resetpassword:
  *   post:
  *     summary: Change user password.
- *     description: It is the last step after was using token in the /forgetpassword end point, now will set a new user password.
+ *     description: Using token in the /forgetpassword end point, now will set a new user password.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -1019,6 +1019,9 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *               newPassword:
  *                 type: string
  *                 maxLength: 300
+ *         required:
+ *          - token
+ *          - newPassword
  *     security:
  *       - JWT: []
  *     responses:
@@ -1050,8 +1053,6 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *         description: Bad request, verify your request data.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
- *       '404':
- *         description: User not found.
  *       '401':
  *         description: Log in unauthorized.
  *       '500':
@@ -1131,8 +1132,8 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  * @swagger
  * /auth/generateOTPFor2StepVerification:
  *   post:
- *     summary: Generate and send an email with a token to complete the 2-step authentication.
- *     description: It is the first step, generate and send an email with a token to complete the 2-step authentication. Then, use end point /login and pass the token to completelly the authentication.
+ *     summary: Send an email with a token to complete the 2-step authentication.
+ *     description: Send an email with a token to complete the 2-step authentication. Then, use end point /login and pass the token to completelly the authentication.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -1150,6 +1151,9 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                 type: string
  *                 example: https://example.com.br
  *                 description: This Uri will be utilized in the email. Upon clicking, it will be accompanied by a token.
+  *         required:
+ *           - email
+ *           - clientUri
  *     security:
  *       - JWT: []
  *     responses:
@@ -1296,7 +1300,7 @@ router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.a
         //     callbackUrl: callbackUrl
         // };
 
-        mail.sendEmail(mailOptions, projectId);
+        mail.sendEmail(mailOptions, projectId, currentTicket);
 
         response.set(200, true, null, null);
         return await response.sendResponse();
