@@ -12,6 +12,12 @@ const httpP = require('../../models/httpResponsePatternModel');
  *     description: Get all solution projects.
  *     tags:
  *       - Projects
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: The page number for pagination (default 1).
  *     security:
  *       - JWT: []
  *     responses:
@@ -48,6 +54,12 @@ const httpP = require('../../models/httpResponsePatternModel');
  *                   type: integer
  *                 totalPages:
  *                   type: integer
+ *       '400':
+ *         description: Bad request, verify your request data.
+ *       '404':
+ *         description: Page not found.
+ *       '500':
+ *         description: Internal Server Error.
  */
 router.get('/get-all', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     

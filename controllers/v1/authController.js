@@ -548,7 +548,6 @@ router.get('/login/external/redirect', async (req, res) => {
  *     tags:
  *       - Auth
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
@@ -558,7 +557,10 @@ router.get('/login/external/redirect', async (req, res) => {
  *                 type: string
  *                 format: uri
  *                 maxLength: 500
- *                 required: true
+ *             required:
+ *               - redirectUri
+ *     security:
+ *       - JWT: []
  *     responses:
  *       '200':
  *         description: Process was successfully.

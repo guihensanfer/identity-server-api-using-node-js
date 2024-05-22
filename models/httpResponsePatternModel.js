@@ -72,6 +72,7 @@ class HTTPResponsePatternModel{
 
     async sendResponse() {
       return new Promise(async (resolve, reject) => {
+        try{
           let response = { 
               message: this.message,
               ticket: this.ticket,
@@ -79,27 +80,33 @@ class HTTPResponsePatternModel{
               errors: this.errors,
               data: this.data
           };
-  
+
           if (this.currentPage) {
               response.currentPage = this.currentPage;
           }
-  
+
           if (this.totalPages) {
               response.totalPages = this.totalPages;
           }
-  
+
           if (this._useLogs == true) {
               try {
                   // Update the request log status
-                  await httpReqLog.commit(this.ticket, this.req.path, null, this._statusCode, this.req?.user?.id, this.req.ip);
+                  await httpReqLog.commit(this.ticket, this.req.path, this.req.method, this._statusCode, this.req?.user?.id, this.req.ip);
               } catch (error) {
                   // Handle error
                   console.error("Error updating request log:", error);
               }
           }
-  
+
           this.res.status(this._statusCode).json(response);
           resolve();
+        }
+        catch
+        {
+          // Catch to previne the "Error [ERR_HTTP_HEADERS_SENT]: Cannot set headers after they are sent to the client"
+        }
+          
       });
   }
   

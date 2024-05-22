@@ -314,11 +314,10 @@ select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' ord
 select * from EmailLogs order by emailLogId desc
 
 update Users set emailConfirmed = 1
-select * from httprequestslogs  order by createdAt desc
 
-select * from OperationLogs 
+select * from HttpRequestsLogs  order by createdAt desc
+select * from OperationLogs order by operationLogId desc
 
-order by operationLogId desc
 select * from ErrorLogs order by errorID desc
 
 update Users set emailConfirmed = 1
