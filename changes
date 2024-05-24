@@ -4,7 +4,11 @@ Examples:
 Wrong ->  BadRequest 400 The Email is required.
 OK    ->  BadRequest 400 The email is required.
 
-1 Standardize the GET queries from the GET request so that the login attribute names have similar nomenclatures;
+1.2 Standardize the GET queries from the GET request so that the login attribute names have similar nomenclatures;
 For exemple: GET query name today -> token, correctily -> refreshToken (like the login body attribute)
 
 3 Create a new attribute in the return API, showing the something like as "userMessage". So that, this is distinct with the current "message" because it is so tecnical info about the HTTP result.
+
+1.1. Create on the table Users the column "AlwaysLoginWith2StepAuth"
+
+1. Check priority the undefined after run application

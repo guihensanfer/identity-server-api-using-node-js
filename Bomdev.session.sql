@@ -276,8 +276,9 @@ select * from Users
 delete from Users where userId=4
 delete from UserToken where userId = 4;
 delete from UsersRoles where userId = 4;
-select * from UsersRoles where userId=1
+select * from UsersRoles where userId=3
 
+select * from Roles
 select * from Projects
 
 select * from EmailLogs order by emaillogid desc
@@ -316,8 +317,8 @@ select * from EmailLogs order by emailLogId desc
 update Users set emailConfirmed = 1
 
 select * from HttpRequestsLogs  order by createdAt desc
-select * from OperationLogs order by operationLogId desc
+select * from OperationLogs 
+--where ticket= '5ca0d10a-95ad-40c4-8f4d-d7b89855a52a' 
+order by operationLogId desc
 
 select * from ErrorLogs order by errorID desc
-
-update Users set emailConfirmed = 1
