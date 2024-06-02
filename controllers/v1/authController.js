@@ -85,7 +85,7 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  *         description: Internal Server Error.
  */
 router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
-// router.post('/register', async (req, res) => {      
+//  router.post('/register', async (req, res) => {      
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        
@@ -477,8 +477,8 @@ router.post('/login', async (req, res) => {
  * @swagger
  * /auth/login/external/redirect:
  *   get:
- *     summary: Redirect to external logging.
- *     description: Redirect to external logging based on token with context.
+ *     summary: Redirect to the external authentication provider.
+ *     description: This request should be made from a browser and will result in an HTTP redirection.
  *     tags:
  *       - Auth
  *     parameters:
@@ -817,9 +817,9 @@ router.get('/login/external/google/callback', async (req, res) => {
 
 /**
  * @swagger
- * /auth/forgetpassword:
+ * /auth/forget-password:
  *   post:
- *     summary: Generate and send an email with a token
+ *     summary: Generate and send an email with a token.
  *     description: It is the first step, generate and send an email with a link to click and complete the resetpassword endpoint.
  *     tags:
  *       - Auth
@@ -879,7 +879,7 @@ router.get('/login/external/google/callback', async (req, res) => {
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
+router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
@@ -1003,7 +1003,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
 
 /**
  * @swagger
- * /auth/resetpassword:
+ * /auth/reset-password:
  *   post:
  *     summary: Change user password.
  *     description: Using token in the /forgetpassword end point, now will set a new user password.
@@ -1060,7 +1060,7 @@ router.post('/forgetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
+router.post('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
@@ -1132,9 +1132,9 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
 
 /**
  * @swagger
- * /auth/generateOTPFor2StepVerification:
+ * /auth/otp:
  *   post:
- *     summary: Send an email with a token to complete the 2-step authentication.
+ *     summary: Generate a one-time password (OTP) for 2-step verification.
  *     description: Send an email with a token to complete the 2-step authentication. Then, use end point /login and pass the token to completelly the authentication.
  *     tags:
  *       - Auth
@@ -1195,7 +1195,7 @@ router.post('/resetpassword', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/generateOTPFor2StepVerification', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
+router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();       
     let currentTicket = response.getTicket(); 
     var { 

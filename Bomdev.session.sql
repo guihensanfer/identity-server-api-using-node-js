@@ -13,6 +13,41 @@ begin
     
 end;
 
+drop table if EXISTS OperationLogs;
+CREATE TABLE OperationLogs (
+    operationLogId INT AUTO_INCREMENT PRIMARY KEY,
+    procedure_name VARCHAR(255) NOT NULL,
+    execution_time_ms INT NOT NULL,
+    execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ticket varchar(50) null,
+    sqlCall LONGTEXT null,
+    successfully bit not null,
+    is_checkpoint bit DEFAULT 0,
+    INDEX (procedure_name),
+    INDEX (execution_date),
+    INDEX (ticket),
+    INDEX (is_checkpoint),    
+
+    FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
+);
+
+drop procedure if exists USP_OperationLogs_Insert;
+CREATE PROCEDURE USP_OperationLogs_Insert (
+    IN p_procedureName VARCHAR(255),
+    IN p_executionTime INT,
+    IN p_sqlCall LONGTEXT,
+    IN p_ticket varchar(50),
+    IN p_successfully bit,    
+    IN p_is_checkpoint bit
+)
+BEGIN
+    INSERT INTO OperationLogs (procedure_name, execution_time_ms, sqlCall, ticket, successfully, is_checkpoint)
+    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket, p_successfully, p_is_checkpoint);
+
+    DELETE FROM OperationLogs
+    WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+END;
+
 drop table if exists ErrorLogs;
 CREATE TABLE IF NOT EXISTS ErrorLogs (
     errorID INT AUTO_INCREMENT PRIMARY KEY,
@@ -100,41 +135,6 @@ BEGIN
     PREPARE stmt FROM @query;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
-END;
-
-drop table if EXISTS OperationLogs;
-CREATE TABLE OperationLogs (
-    operationLogId INT AUTO_INCREMENT PRIMARY KEY,
-    procedure_name VARCHAR(255) NOT NULL,
-    execution_time_ms INT NOT NULL,
-    execution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ticket varchar(50) null,
-    sqlCall LONGTEXT null,
-    successfully bit not null,
-    is_checkpoint bit DEFAULT 0,
-    INDEX (procedure_name),
-    INDEX (execution_date),
-    INDEX (ticket),
-    INDEX (is_checkpoint),    
-
-    FOREIGN KEY (ticket) REFERENCES HttpRequestsLogs(ticket)
-);
-
-drop procedure if exists USP_OperationLogs_Insert;
-CREATE PROCEDURE USP_OperationLogs_Insert (
-    IN p_procedureName VARCHAR(255),
-    IN p_executionTime INT,
-    IN p_sqlCall LONGTEXT,
-    IN p_ticket varchar(50),
-    IN p_successfully bit,    
-    IN p_is_checkpoint bit
-)
-BEGIN
-    INSERT INTO OperationLogs (procedure_name, execution_time_ms, sqlCall, ticket, successfully, is_checkpoint)
-    VALUES (p_procedureName, p_executionTime, p_sqlCall, p_ticket, p_successfully, p_is_checkpoint);
-
-    DELETE FROM OperationLogs
-    WHERE execution_date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
 END;
 
 drop table if exists UserToken;
@@ -243,6 +243,32 @@ alter table UserToken add if not exists  disabledDate datetime null;
 alter table Users add if not exists  picture varchar(200) null;
 alter table UserToken add if not exists data varchar(500) null;
 
+alter table Projects add picture varchar(200) null;
+
+drop procedure if exists USP_OAUTH_CONTEXT_SELECT;
+create procedure USP_OAUTH_CONTEXT_SELECT(in _userId int, in _projectId int)
+BEGIN 
+    select 
+        oa.userId, 
+        oa.clientCallbackUri, 
+        oa.clientSecret,
+        u.firstName,
+        u.lastName,
+        u.defaultLanguage,
+        oa.createdAt,
+        oa.enabled as callbackStatus,
+        p.projectId,
+        p.name as projectName,
+        p.description as projectDescription,
+        p.picture as projectPicture
+    from UsersOAuths oa
+    inner join Users u on u.userId = oa.userId
+    inner join Projects p on p.projectId = u.projectId
+    where oa.userId = _userId and p.projectId = _projectId;
+END;
+
+----------------------------------------------------------------------------
+
 SET foreign_key_checks = 0;
 truncate table ErrorLogs;
 truncate table Users;
@@ -318,7 +344,11 @@ update Users set emailConfirmed = 1
 
 select * from HttpRequestsLogs  order by createdAt desc
 select * from OperationLogs 
+order by operationLogId desc
 --where ticket= '5ca0d10a-95ad-40c4-8f4d-d7b89855a52a' 
 order by operationLogId desc
 
 select * from ErrorLogs order by errorID desc
+
+
+select * from UsersOAuths

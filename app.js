@@ -1,9 +1,8 @@
 require('dotenv').config();
 
 const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const authController = require('./controllers/v1/authController');
+const oAuthController = require('./controllers/v1/oAuthController');
 const documentTypesController = require('./controllers/v1/documentTypesController');
 const projectsController = require('./controllers/v1/projectsController');
 const swaggerUi = require('swagger-ui-express');
@@ -35,6 +34,10 @@ const swaggerOptions = {
             {
                 'name': 'Auth',
                 'description': 'Authentication'
+            },
+            {
+                'name': 'OAuth',
+                'description': 'Log in using the Bomdev provider.'
             },
             {
                 'name': 'Document Types',
@@ -73,48 +76,21 @@ app.listen(3000);
 // v1
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/v1/auth', authController);
-app.use('/api/v1/documentTypes', documentTypesController);
+app.use('/api/v1/oauth', oAuthController);
+app.use('/api/v1/document-types', documentTypesController);
 app.use('/api/v1/projects', projectsController);
 
 // Database
 (async () => {
-    await db.executeProcedure('USP_TEST')
-    .then(res => {
-
-        console.log(res[0][0][0].result);
-        
-        // var records = res[0];
-
-        // for(var x = 0; x < res.length; x++){
-        //     console.log(records[0][x].result);
-        // }
-    })
-    .catch(ex => {
-        console.log('exception: ' + ex)
-    });
-    await db.executeProcedure('USP_TEST2',['test'])
-    .then(res => {
-
-        console.log(res[0][0][0].result);
-        console.log(res[0][1][0].result);
-        // var records = res[0];
-
-        // for(var x = 0; x < res.length; x++){
-        //     console.log(records[0][x].result);
-        // }
-    })
-    .catch(ex => {
-        console.log('exception: ' + ex)
-    });
-
+    
     // Sequelize
-
+    const HttpRequestsLogs = require('./repositories/httpRequestsLogs');
     const Projects = require('./repositories/projectsRepository');
     const DocumentTypes = require('./repositories/documentTypesRepository');
-    const Users = require('./repositories/authRepository');
-    const HttpRequestsLogs = require('./repositories/httpRequestsLogs');
+    const Users = require('./repositories/authRepository');    
     const Roles = require('./repositories/rolesRepository');
     const UsersRoles = require('./repositories/usersRolesRepository');
+    const UsersOAuth = require('./repositories/oAuthRepository');
 
     await db._sequealize.sync();    
 
@@ -197,6 +173,35 @@ app.use('/api/v1/projects', projectsController);
             name: RolesModel.ROLE_USER,
             description: RolesModel.ROLE_USER
         }
+    });
+
+    await db.executeProcedure('USP_TEST')
+    .then(res => {
+
+        console.log(res[0][0][0].result);
+        
+        // var records = res[0];
+
+        // for(var x = 0; x < res.length; x++){
+        //     console.log(records[0][x].result);
+        // }
+    })
+    .catch(ex => {
+        console.log('exception: ' + ex)
+    });
+    await db.executeProcedure('USP_TEST2',['test'])
+    .then(res => {
+
+        console.log(res[0][0][0].result);
+        console.log(res[0][1][0].result);
+        // var records = res[0];
+
+        // for(var x = 0; x < res.length; x++){
+        //     console.log(records[0][x].result);
+        // }
+    })
+    .catch(ex => {
+        console.log('exception: ' + ex)
     });
 
     

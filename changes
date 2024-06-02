@@ -1,3 +1,13 @@
+continuar: I was development at oAuthController, I need to create an endpoint to set an application role to userId. 
+Important: Like as Google oauth2, I think to create two endpoints in the OAuth tag.
+- user-assign-application-role (current)
+- user-info (get basic user info by token. So that contains the userId in the data column from database)
+
+* result json esta campos bit deve ser boolean a apresentação
+* pensar como a aplicação irá obter o contexto inicial ao abrir o identityserver. provavelmente usando uma conta super usuario
+* revisar todos os metodos novos
+
+
 2 Api endpoint result show 400 badrequest mensages with the word case correcty. There is situations when the attribute name is showing diferents word case
 Examples: 
 

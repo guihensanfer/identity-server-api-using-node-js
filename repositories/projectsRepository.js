@@ -16,6 +16,10 @@ const data = db._sequealize.define('Projects', {
     description:{
         type: Sequelize.STRING(100),
         allowNull:false        
+    },
+    picture:{
+        type: Sequelize.STRING(200),
+        allowNull:true        
     }
 });
 

@@ -1,10 +1,12 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
 const idb = require('../interfaces/idb');
-const RolesRepository = require('../repositories/rolesRepository');
+const MAX_CALLBACKURI_LENGTH = 300;
+const MAX_SECRET_LENGTH = 100;
+const { v4: uuidv4 } = require('uuid');
 
-const data = db._sequealize.define('UsersRoles', {
-    usersRolesId:{
+const data = db._sequealize.define('UsersOAuths', {
+    usersOAuthId:{
         type: Sequelize.INTEGER,
         autoIncrement:true,
         allowNull:false,
@@ -18,35 +20,31 @@ const data = db._sequealize.define('UsersRoles', {
             key: 'userId'
         }        
     },
-    roleId:{
-        type: Sequelize.INTEGER,
+    clientCallbackUri:{
+        type: Sequelize.STRING(MAX_CALLBACKURI_LENGTH),
+        allowNull:false
+    },
+    clientSecret:{
+        type: Sequelize.STRING(MAX_SECRET_LENGTH),
+        allowNull:false
+    },
+    enabled:{
+        type: Sequelize.BOOLEAN,
         allowNull:false,
-        references: {
-            model: 'Roles', 
-            key: 'roleId'
-        }
+        defaultValue: 1
     }
 });
 
+
 // Checkpoint method
-async function setUserNewRole(userId, roleName, ticket) {  
+async function createUserCallback(userId, callbackUri, ticket) {  
     const transaction = await data.sequelize.transaction();
-    const operationLog = new db.OperationLogs("SET_USER_NEW_ROLE_METHOD", null, ticket, true);
+    const operationLog = new db.OperationLogs("CREATE_USER_CALLBACK_METHOD", null, ticket, true);
     let successfully = true; 
   
     try {      
-
-        const rolesProcs = new RolesRepository.Procs(ticket);
-
-        let newRoleId = 0;
-
-        newRoleId = await rolesProcs.getRoleIdByName(roleName);
-
-        if(!newRoleId || newRoleId <= 0){
-            throw new Error(httpP.HTTPResponsePatternModel.cannotGetMsg('User new role Id'));
-        }
   
-        await data.delete({
+        await data.destroy({
                 where:{
                     userId: userId
                 }
@@ -56,20 +54,22 @@ async function setUserNewRole(userId, roleName, ticket) {
             });
 
         const createdData = await data.create({
+            clientCallbackUri: callbackUri,
+            enabled: true,
             userId: userId,
-            roleId: newRoleId,        
+            clientSecret: uuidv4()      // always after changed set new secret  
         }, {        
-            attributes: ['usersRolesId'],
+            attributes: ['UsersOAuthId'],
             transaction
         });
     
-        const dataId = createdData.usersRolesId;
+        const dataId = createdData.usersOAuthId;
     
         if (dataId) {
             // success
 
         } else {
-            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User new role'));
+            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User Callback'));
         }
     
         // Confirmar a transação
@@ -88,16 +88,24 @@ async function setUserNewRole(userId, roleName, ticket) {
     }
   }
 
-
 class Procs extends idb{
     constructor(ticket){
         super(ticket);
     }
     
+    async getCallbackContext(userId, projectId) {
+        try {
+          const res = await db.executeProcedure('USP_OAUTH_CONTEXT_SELECT', [userId, projectId], this.ticket);
+          return res[0][0][0];
+        } catch {
+          return false;
+        }
+      }
 }
 
 module.exports = {
     data,
-    Procs,
-    setUserNewRole
+    createUserCallback,
+    MAX_CALLBACKURI_LENGTH,
+    Procs
 };

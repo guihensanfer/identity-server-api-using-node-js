@@ -6,7 +6,7 @@ const httpP = require('../../models/httpResponsePatternModel');
 
 /**
  * @swagger
- * /documenttypes/get-all:
+ * /document-types/get-all:
  *   get:
  *     summary: User document types.
  *     description: Get all user document types.

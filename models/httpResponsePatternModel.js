@@ -172,6 +172,10 @@ class HTTPResponsePatternModel{
       return HTTPResponsePatternModel.auth(RolesModel.adminGroup);
     }
 
+    static authWithSuperUserGroup(){      
+      return HTTPResponsePatternModel.auth(RolesModel.superUserGroup);
+    }
+
 
     static getUserIdByRefreshToken(checkRefreshToken) {
       let token = checkRefreshToken;      
