@@ -246,7 +246,7 @@ alter table UserToken add if not exists data varchar(500) null;
 alter table Projects add picture varchar(200) null;
 
 drop procedure if exists USP_OAUTH_CONTEXT_SELECT;
-create procedure USP_OAUTH_CONTEXT_SELECT(in _userId int, in _projectId int)
+create procedure USP_OAUTH_CONTEXT_SELECT(in _userIdOP int, in _projectIdOP int, in _secretKeyOP varchar(100))
 BEGIN 
     select 
         oa.userId, 
@@ -264,10 +264,13 @@ BEGIN
     from UsersOAuths oa
     inner join Users u on u.userId = oa.userId
     inner join Projects p on p.projectId = u.projectId
-    where oa.userId = _userId and p.projectId = _projectId;
+    where (_userIdOP is null or oa.userId = _userIdOP and p.projectId = _projectIdOP)    
+    and (_secretKeyOP is null or oa.clientSecret = _secretKeyOP);
 END;
 
 ----------------------------------------------------------------------------
+
+
 
 SET foreign_key_checks = 0;
 truncate table ErrorLogs;

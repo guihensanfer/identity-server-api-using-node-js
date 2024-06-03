@@ -93,9 +93,12 @@ class Procs extends idb{
         super(ticket);
     }
     
-    async getCallbackContext(userId, projectId) {
+    // Get context from userId or secretKey. The projectId parameter is only for security when the userId exist in the called.
+    // Example request case 1: The user application want to know how about your own context info.
+    // Example request case 2: The application using a super user with a secret key, want to see how about the context info by secret key. 
+    async getCallbackContext(userId = null, projectId = null, secretKey = null) {
         try {
-          const res = await db.executeProcedure('USP_OAUTH_CONTEXT_SELECT', [userId, projectId], this.ticket);
+          const res = await db.executeProcedure('USP_OAUTH_CONTEXT_SELECT', [userId, projectId, secretKey], this.ticket);
           return res[0][0][0];
         } catch {
           return false;

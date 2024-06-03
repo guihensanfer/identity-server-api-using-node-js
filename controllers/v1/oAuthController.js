@@ -121,11 +121,18 @@ router.post('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(),
  *     description: Get your callback profile and see the secret key.
  *     tags:
  *       - OAuth
+ *     parameters:
+ *       - name: secretKey
+ *         in: query
+ *         description: (Optional) secret key of the callback context.
+ *         required: false
+ *         type: string
+ *         maxLength: 100
  *     security:
  *       - JWT: []
  *     responses:
  *       '200':
- *         description: Callback was successful.
+ *         description: Context get was successful.
  *       '400':
  *         description: Bad request, verify your request data.
  *       '401':
@@ -139,6 +146,7 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket();     
     let errors = [];  
+    let secretKey = req.query.secretKey;
 
     try
     {                
@@ -160,6 +168,12 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
             }            
         }
 
+        let requestBySecretKey = false;
+        if(!_.isNull(secretKey) && !_.isEmpty(secretKey) && !_.isUndefined(secretKey)){
+            requestBySecretKey = true;
+        }
+        
+
         const userId = req.user.id;
         
         if(!userId || userId <= 0){
@@ -176,7 +190,11 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
          
         const oAuthProcs = new oAuth.Procs(currentTicket);
 
-        const data = await oAuthProcs.getCallbackContext(userId, projectId);
+        const data = await oAuthProcs.getCallbackContext(
+            !requestBySecretKey ? userId : null,
+            !requestBySecretKey ? projectId : null, 
+            requestBySecretKey ? secretKey : null
+        );
 
         response.set(200, true, null, data, 'Get data was successful.');
         return await response.sendResponse();
@@ -226,7 +244,7 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *       '500':
  *         description: Internal Server Error.
  */
-router.get('/user-assign-application-role', httpP.HTTPResponsePatternModel.authWithSuperUserGroup(), async (req, res) => {         
+router.post('/user-assign-application-role', httpP.HTTPResponsePatternModel.authWithSuperUserGroup(), async (req, res) => {         
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket();     
     var { userId } = req.body;       
@@ -309,7 +327,7 @@ router.get('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
  *     parameters:
  *       - name: code
  *         in: query
- *         description: Token with context for get user profile.
+ *         description: The callback code received with context for get user profile.
  *         required: true
  *         type: string
  *         maxLength: 100
