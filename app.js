@@ -9,6 +9,9 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
 const db = require('./db');
 const RolesModel = require('./models/rolesModel');
+const path = require('path');
+
+
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -65,16 +68,24 @@ const swaggerOptions = {
     ], // Controllers paths
     
 };  
-const swaggerSpec = swaggerJSDoc(swaggerOptions);  
+const swaggerSpec = swaggerJSDoc(swaggerOptions); 
+const options = {
+    customCss: '.swagger-ui .info .title { background: url(../public/assets/img/logo.png) no-repeat left; background-size: contain; height: 60px; text-align:center; }',
+    customSiteTitle: "Bomdev API Documentation"
+}; 
 
 const app = express();
 app.use(express.json());
 app.listen(3000);
 
+
+// Serve static files from the "public" directory
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
 // Mapping
 
 // v1
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, options));
 app.use('/api/v1/auth', authController);
 app.use('/api/v1/oauth', oAuthController);
 app.use('/api/v1/document-types', documentTypesController);
