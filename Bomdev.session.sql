@@ -314,6 +314,10 @@ select * from EmailLogs order by emaillogid desc
 
 SELECT * FROM UserToken order by userTokenId desc
 
+insert into UserToken(userID, token, expiredAt, requestIp, processName, enabled, disabledDate, data)
+values(1, 'teste', '2024-06-18 15:39:47', '1', 'OAUTH_LOGIN', 1, null, '1');
+delete from UserToken where userTokenId = 14;
+
 
 select * from ProcedureStatistics order by execution_date desc
 

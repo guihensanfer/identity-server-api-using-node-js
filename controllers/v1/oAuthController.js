@@ -8,6 +8,7 @@ const UsersRoles = require('../../repositories/usersRolesRepository');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const httpP = require('../../models/httpResponsePatternModel');
+const { request } = require('express');
 
 /**
  * @swagger
@@ -353,12 +354,7 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
     const code = req.query.code;
 
     try
-    {
-        if (Object.keys(req.body).length === 0) {
-            response.set(400,false);
-
-            return await response.sendResponse();
-        }        
+    {   
         
         // ProjectId
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
@@ -389,13 +385,16 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
             return await response.sendResponse();
         }        
 
+        const authProcs = new Auth.Procs(currentTicket);
+
         const dataFromCode = await authProcs.userTokenVerifyAll(code);
 
         if(_.isNull(dataFromCode) || _.isEmpty(dataFromCode)){
-            throw new Error('Invalid data from code.')
+            response.set(401, false);
+            return await response.sendResponse();
         }
         
-        const userId = parseInt(dataFromCode);
+        const userId = parseInt(dataFromCode.data);
         
         if(!userId || userId <= 0){
             errors.push(httpP.HTTPResponsePatternModel.cannotGetMsg('User from Request'));
@@ -406,7 +405,7 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
                 userId:userId,
                 projectId:projectId // secury to get the same users projectId from the user request
             },
-            attributes:['userId', 'firstName', 'lastName', 'email', 'defaultLanguage', 'picture']                                    
+            attributes:['userId', 'firstName', 'lastName', 'email', 'defaultLanguage', 'picture', 'projectId', 'emailConfirmed', 'enabled']                                    
         });
 
         response.set(200, true, null, data, 'Get data was successful.');

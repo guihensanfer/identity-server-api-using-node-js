@@ -276,10 +276,17 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  *                     accessToken:
  *                       type: string
  *                       description: User authentication token
- *                     expiredAccessAt:
+ *                     accessExpiredAt:
  *                       type: string
  *                       format: date-time
  *                       description: Access token expiration date and time
+ *                     userInfoCode:
+ *                       type: string
+ *                       description: For consulting the user info (for example after log in)
+ *                     userInfoCodeExpiredAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: User info code expiration date and time
  *                     refreshToken:
  *                       type: string
  *                       description: Use the refresh token for seamless future authentication. If you wish to utilize the refresh token for logging in, include only the refresh token in your request.
@@ -451,11 +458,16 @@ router.post('/login', async (req, res) => {
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
         refreshExpiresAt.setMinutes(refreshExpiresAt.getMinutes() + parseInt(process.env.JWT_REFRESH_EXPIRATION));
 
+        // For refresh log in, without request news with the confidential infos
         const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip, 'REFRESH_TOKEN');
+        // Used on OAuth callback context, so that the client app can see the user info to show into their app.
+        const codeForUserInfo = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OAUTH_USER_INFO', user.userId);
 
         const result = {
             accessToken: token,
             accessExpiredAt: accessExpiresAt,
+            userInfoCode: codeForUserInfo,
+            userInfoCodeExpiredAt: accessExpiresAt,
             refreshToken: refresh,
             refreshExpiredAt: refreshExpiresAt
         };

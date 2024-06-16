@@ -22,3 +22,9 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 1.1. Create on the table Users the column "AlwaysLoginWith2StepAuth"
 
 1. Check priority the undefined after run application
+
+** security: implement validation to count wrong tried log in to prevent robots requests.
+
+** generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
+
+* why refresh token is inserting two lines in database?
