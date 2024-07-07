@@ -28,3 +28,5 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 ** generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
 
 * why refresh token is inserting two lines in database?
+
+* login without password (login with email and code numbers)

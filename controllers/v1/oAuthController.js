@@ -12,6 +12,119 @@ const { request } = require('express');
 
 /**
  * @swagger
+ * /oauth/user-check-email-exists:
+ *   post:
+ *     summary: Check if email already exists.
+ *     description: Check if email already exists.
+ *     tags:
+ *       - OAuth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 maxLength: 200
+ *               enabled:
+ *                 type: boolean
+ *                 example: true
+ *               projectId:
+ *                 type: int
+ *             required:
+ *               - email
+ *     security:
+ *       - JWT: []
+ *     responses:
+ *       '200':
+ *         description: Email already exists.
+ *       '400':
+ *         description: Bad request, verify your request data.
+ *       '401':
+ *         description: Log in unauthorized.
+ *       '404':
+ *         description: Email not exists.
+ *       '422':
+ *         description: Unprocessable entity, the provided data is not valid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {         
+    let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
+    const currentTicket = response.getTicket(); 
+    var { email, enabled, projectId } = req.body;        
+    let errors = [];  
+
+    try
+    {
+        if (Object.keys(req.body).length === 0) {
+            response.set(400,false);
+
+            return await response.sendResponse();
+        }
+
+        // client callback
+        if(_.isNull(email) || _.isEmpty(email)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('email'));
+        }
+        else if(callbackUri.length > Auth.MAX_EMAIL_LENGTH){            
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('email'));        
+        }
+        else if(!util.isValidEmail(email)){            
+            errors.push('Valid email is required.');
+        }    
+        
+        // ProjectId
+        projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
+
+        if(!projectId){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
+        }
+        else{
+            let project = await Projects.data.findOne({
+                where: {
+                    projectId: projectId
+                }
+            });
+
+            if(!project){
+                errors.push('ProjectId is invalid.');
+            }            
+        }
+        
+        // ----- Check for errors
+        if(errors && errors.length > 0){
+            response.set(422,false, errors);
+
+            return await response.sendResponse();
+        }        
+         
+        const authProcs = new Auth.Procs(currentTicket);
+
+        const result = await authProcs.checkUserExists(email, projectId, enabled);
+
+        if(!result){
+            response.set(404, true, null, false);
+            return await response.sendResponse();    
+        }
+
+        response.set(200, true, null, true);
+        return await response.sendResponse();
+    }
+    catch(err){
+        let errorModel = ErrorLogModel.DefaultForEndPoints(req, err, currentTicket);
+
+        await db.errorLogInsert(errorModel);
+
+        response.set(500, false, [err.message]);      
+        return await response.sendResponse();
+    }    
+});
+
+/**
+ * @swagger
  * /oauth/set-context:
  *   post:
  *     summary: Set a callback context for current application user group.

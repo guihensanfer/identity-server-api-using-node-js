@@ -110,12 +110,14 @@ END;
 drop procedure if exists USP_USERS_SELECT_EXISTS;
 create procedure if not exists USP_USERS_SELECT_EXISTS(
     in _email varchar(200),
-    in _projectId int
+    in _projectId int,
+    in _enabled bit
 )
 begin
     select count(1) as result from Users u 
     where u.email = IFNULL(_email, u.email) 
-    and u.projectId = IFNULL(_projectId, u.projectId);
+    and u.projectId = IFNULL(_projectId, u.projectId)
+    and (_enabled is null or u.enabled = _enabled);
 end;
 
 drop procedure if exists USP_Roles_GET_BY_NAME;

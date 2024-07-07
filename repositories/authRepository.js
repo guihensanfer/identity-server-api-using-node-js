@@ -189,9 +189,9 @@ class Procs extends idb{
     super(ticket);
   }
 
-  async checkUserExists(email = null, projectId = null) {
+  async checkUserExists(email = null, projectId = null, enabled = null) {
     try {
-      const res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId], this.ticket);
+      const res = await db.executeProcedure('USP_USERS_SELECT_EXISTS', [email, projectId, enabled], this.ticket);
       return res[0][0][0].result > 0;
     } catch {
       return false;
