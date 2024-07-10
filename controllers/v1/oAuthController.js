@@ -9,6 +9,7 @@ const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const httpP = require('../../models/httpResponsePatternModel');
 const { request } = require('express');
+const util = require('../../services/utilService');
 
 /**
  * @swagger
@@ -31,8 +32,6 @@ const { request } = require('express');
  *               enabled:
  *                 type: boolean
  *                 example: true
- *               projectId:
- *                 type: int
  *             required:
  *               - email
  *     security:
@@ -54,7 +53,7 @@ const { request } = require('express');
 router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {         
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
-    var { email, enabled, projectId } = req.body;        
+    var { email, enabled } = req.body;        
     let errors = [];  
 
     try
@@ -65,11 +64,11 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
             return await response.sendResponse();
         }
 
-        // client callback
+        // email
         if(_.isNull(email) || _.isEmpty(email)){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('email'));
         }
-        else if(callbackUri.length > Auth.MAX_EMAIL_LENGTH){            
+        else if(email.length > Auth.MAX_EMAIL_LENGTH){            
             errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('email'));        
         }
         else if(!util.isValidEmail(email)){            
@@ -77,7 +76,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
         }    
         
         // ProjectId
-        projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
+        const projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
 
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
@@ -106,11 +105,17 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
         const result = await authProcs.checkUserExists(email, projectId, enabled);
 
         if(!result){
-            response.set(404, true, null, false);
+            response.set(404, true, null, {
+                userExists: false
+            }, 
+            'User not found');
             return await response.sendResponse();    
         }
 
-        response.set(200, true, null, true);
+        response.set(200, true, null, {
+            userExists: true
+        }, 
+        'User found');
         return await response.sendResponse();
     }
     catch(err){
