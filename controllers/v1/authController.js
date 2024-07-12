@@ -84,8 +84,8 @@ const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
-//  router.post('/register', async (req, res) => {      
+//router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {      
+  router.post('/register', async (req, res) => {      
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        

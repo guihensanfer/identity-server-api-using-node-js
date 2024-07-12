@@ -10,7 +10,7 @@ const swaggerJSDoc = require('swagger-jsdoc');
 const db = require('./db');
 const RolesModel = require('./models/rolesModel');
 const path = require('path');
-
+const cors = require('cors');
 
 const swaggerOptions = {
     definition: {
@@ -75,6 +75,24 @@ const options = {
 }; 
 
 const app = express();
+
+// tentativa 1 resolve samesite 
+//app.set('trust proxy', 1);
+
+// tentativa 2
+// const corsOptions = {
+//     origin: 'http://localhost:3000', // Substitua pelo domínio de sua aplicação
+//     credentials: true, // Permite cookies entre domínios
+//   };
+
+const corsOptions = {
+    origin: '*', // Permitir todas as origens, você pode especificar 'http://localhost:3000' para maior segurança
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+  };
+  
+  app.use(cors(corsOptions));
+
 app.use(express.json());
 app.listen(3000);
 
