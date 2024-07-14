@@ -29,11 +29,14 @@ const util = require('../../services/utilService');
  *               email:
  *                 type: string
  *                 maxLength: 200
+ *               projectId:
+ *                 type: integer
  *               enabled:
  *                 type: boolean
  *                 example: true
  *             required:
  *               - email
+ *               - projectId
  *     security:
  *       - JWT: []
  *     responses:
@@ -75,7 +78,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
             errors.push('Valid email is required.');
         }    
 
-        if(req.projectId != 1 && projectId != req.projectId){
+        if(req.user.projectId != 1 && projectId != req.user.projectId){
             // App is requesting an different projectId 
             // Access danied
 
