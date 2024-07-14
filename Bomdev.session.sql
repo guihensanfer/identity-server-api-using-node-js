@@ -330,10 +330,10 @@ SHOW CREATE TABLE ErrorLogs;
 SHOW CREATE TABLE ErrorLogs;
 
 
-update Users set emailConfirmed=1 where userId=1
+update Users set emailConfirmed=1 where userId=2
 select * from UsersRoles 
 
-update UsersRoles set roleId = 1 where userId = 1
+update UsersRoles set roleId = 1 where userId = 2
 
 call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
 select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' order by data desc
@@ -361,3 +361,5 @@ select * from ErrorLogs order by errorID desc
 
 
 select * from UsersOAuths
+
+update Users set projectId = 1 where userId = 2;

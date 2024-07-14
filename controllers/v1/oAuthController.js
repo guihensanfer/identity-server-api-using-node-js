@@ -53,7 +53,7 @@ const util = require('../../services/utilService');
 router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {         
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
-    var { email, enabled } = req.body;        
+    var { email, projectId, enabled } = req.body;        
     let errors = [];  
 
     try
@@ -74,6 +74,15 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
         else if(!util.isValidEmail(email)){            
             errors.push('Valid email is required.');
         }    
+
+        if(req.projectId != 1 && projectId != req.projectId){
+            // App is requesting an different projectId 
+            // Access danied
+
+            response.set(401,false, null, null, 'Requesting a project other than yours is not allowed for your role.');
+
+            return await response.sendResponse();
+        }
         
         // ProjectId
         const projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
