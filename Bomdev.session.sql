@@ -353,8 +353,7 @@ update Users set emailConfirmed = 1
 
 select * from HttpRequestsLogs  order by createdAt desc
 select * from OperationLogs 
-order by operationLogId desc
---where ticket= '5ca0d10a-95ad-40c4-8f4d-d7b89855a52a' 
+where ticket= '82929ca5-20a0-4027-86b1-c05c8e88e9e5' 
 order by operationLogId desc
 
 select * from ErrorLogs order by errorID desc

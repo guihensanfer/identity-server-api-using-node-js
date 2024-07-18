@@ -264,10 +264,91 @@ router.post('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(),
  *     responses:
  *       '200':
  *         description: Context get was successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Get data was successful.
+ *                 ticket:
+ *                   type: string
+ *                   example: c721af44-0183-4643-b7a7-f6ea9232842c
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 errors:
+ *                   type: string
+ *                   nullable: true
+ *                   example: null
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: integer
+ *                       example: 2
+ *                     clientCallbackUri:
+ *                       type: string
+ *                       example: http://example.com.br/login/callback
+ *                     clientSecret:
+ *                       type: string
+ *                       example: 79c7fa3f-bf20-4bd2-a748-0edecc431ede
+ *                     firstName:
+ *                       type: string
+ *                       example: User Name
+ *                     lastName:
+ *                       type: string
+ *                       example: Last Name
+ *                     defaultLanguage:
+ *                       type: string
+ *                       example: pt-br
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2024-07-17T17:05:05.000Z
+ *                     callbackStatus:
+ *                       type: integer
+ *                       example: 1
+ *                     projectId:
+ *                       type: integer
+ *                       example: 1
+ *                     projectName:
+ *                       type: string
+ *                       example: Project Name
+ *                     projectDescription:
+ *                       type: string
+ *                       example: Project description
+ *                     projectPicture:
+ *                       type: string
+ *                       nullable: true
+ *                       example: http://example.com.br/assets/img/picture.png
  *       '400':
  *         description: Bad request, verify your request data.
  *       '401':
  *         description: Log in unauthorized. 
+ *       '404':
+ *         description: Context not found. 
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Context not found.
+ *                 ticket:
+ *                   type: string
+ *                   example: c721af44-0183-4643-b7a7-f6ea9232842c
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 errors:
+ *                   type: object
+ *                   example: null
+ *                 data:
+ *                   type: object
+ *                   example: null
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
  *       '500':
@@ -326,6 +407,11 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
             !requestBySecretKey ? projectId : null, 
             requestBySecretKey ? secretKey : null
         );
+
+        if(!data){
+            response.set(404, true, null, data, 'Context not found.');
+            return await response.sendResponse();
+        }
 
         response.set(200, true, null, data, 'Get data was successful.');
         return await response.sendResponse();
