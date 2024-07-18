@@ -1016,7 +1016,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
 /**
  * @swagger
  * /auth/reset-password:
- *   post:
+ *   put:
  *     summary: Change user password.
  *     description: Using token in the /forgetpassword end point, now will set a new user password.
  *     tags:
@@ -1072,7 +1072,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
+router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
@@ -1147,7 +1147,7 @@ router.post('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup
  * /auth/otp:
  *   post:
  *     summary: Generate a one-time password (OTP) for 2-step verification.
- *     description: Send an email with a token to complete the 2-step authentication. Then, use end point /login and pass the token to completelly the authentication.
+ *     description: 1. The system sends an email containing a simple numeric code to the user's email address; 2. This endpoint returns a code; please save it; 3. Proceed to use the /auth/login endpoint, providing the saved code along with the numeric code entered by the user."
  *     tags:
  *       - Auth
  *     requestBody:
@@ -1165,7 +1165,11 @@ router.post('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup
  *                 type: string
  *                 example: https://example.com.br
  *                 description: This Uri will be utilized in the email. Upon clicking, it will be accompanied by a token.
-  *         required:
+ *               projectId:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: (Optional) projectId
+ *         required:
  *           - email
  *           - clientUri
  *     security:

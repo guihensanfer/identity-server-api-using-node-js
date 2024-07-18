@@ -8,7 +8,6 @@ const UsersRoles = require('../../repositories/usersRolesRepository');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const httpP = require('../../models/httpResponsePatternModel');
-const { request } = require('express');
 const util = require('../../services/utilService');
 
 /**
@@ -31,6 +30,8 @@ const util = require('../../services/utilService');
  *                 maxLength: 200
  *               projectId:
  *                 type: integer
+ *                 nullable: true
+ *                 description: (Optional) projectId
  *               enabled:
  *                 type: boolean
  *                 example: true
@@ -41,13 +42,13 @@ const util = require('../../services/utilService');
  *       - JWT: []
  *     responses:
  *       '200':
- *         description: Email already exists.
+ *         description: User already exists.
  *       '400':
  *         description: Bad request, verify your request data.
  *       '401':
  *         description: Log in unauthorized.
  *       '404':
- *         description: Email not exists.
+ *         description: User not exists.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
  *       '500':
@@ -78,17 +79,13 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
             errors.push('Valid email is required.');
         }    
 
-        if(req.user.projectId != 1 && projectId != req.user.projectId){
-            // App is requesting an different projectId 
-            // Access danied
 
-            response.set(401,false, null, null, 'Requesting a project other than yours is not allowed for your role.');
-
-            return await response.sendResponse();
-        }
+        // Security to prevent an user role different than SU can requests another projectsIds
+        if(!projectId || req.user.projectId !== 1){
+            // ProjectId
+            projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
+        }                
         
-        // ProjectId
-        const projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
 
         if(!projectId){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
@@ -143,7 +140,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
 /**
  * @swagger
  * /oauth/set-context:
- *   post:
+ *   put:
  *     summary: Set a callback context for current application user group.
  *     description: Used to complete the login using the Bomdev application provider.
  *     tags:
@@ -175,7 +172,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {         
+router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {         
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     var { callbackUri } = req.body;        
@@ -429,7 +426,7 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
 /**
  * @swagger
  * /oauth/user-assign-application-role:
- *   post:
+ *   put:
  *     summary: Assign "APPLICATION_ROLE" privilegies to a user (only for super users privilegies).
  *     description: Assigns the "APPLICATION_ROLE" to a specified user, enabling them to use OAuth and other related endpoints.
  *     tags:
@@ -461,7 +458,7 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/user-assign-application-role', httpP.HTTPResponsePatternModel.authWithSuperUserGroup(), async (req, res) => {         
+router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authWithSuperUserGroup(), async (req, res) => {         
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket();     
     var { userId } = req.body;       
