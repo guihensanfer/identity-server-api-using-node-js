@@ -199,7 +199,7 @@ BEGIN
     LIMIT 1;
 
     -- Selecionando o userId como resultado
-    SELECT userId AS result, data FROM tempResult;
+    SELECT userId, data FROM tempResult;
 
     -- Excluindo o token atual e outros tokens antigos semelhantes
     UPDATE UserToken ut

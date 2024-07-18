@@ -30,3 +30,5 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 * why refresh token is inserting two lines in database?
 
 * login without password (login with email and code numbers)
+
+* improve the refreshtoken process login with a 'count' sequence to turn it more hard to intercept by hackers access

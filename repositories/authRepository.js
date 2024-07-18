@@ -210,7 +210,7 @@ class Procs extends idb{
   async userTokenVerify(token, requestIp = null) {
     try {
       const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp], this.ticket);
-      return res[0][0][0].result;
+      return res[0][0][0].userId;
     } catch {
       return null;
     }

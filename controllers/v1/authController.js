@@ -244,10 +244,14 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  *               password:
  *                 type: string
  *                 maxLength: 300
- *               continueWithToken:
+ *               continueWithCode:
  *                 type: string
- *                 description: Use this parameter to continue with a token. 1 After the log in, a new refresh token is generated. 2. To obtain a new access token using refresh token, send only the token without including any additional attributes.
- *                 example: string // TODO If you have this, then send only the token without including any additional attributes
+ *                 description: Can be used for refreshToken, external or OTP authentications.
+ *                 example: optional
+ *               codePassword:
+ *                 type: string
+ *                 description: Can be used for refreshToken, external or OTP authentications.
+ *                 example: optional
  *     responses:
  *       '200':
  *         description: Log in was successfully.
@@ -310,7 +314,7 @@ router.post('/login', async (req, res) => {
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();      
     const currentTicket = response.getTicket(); 
     var { 
-        email, password, projectId, continueWithToken
+        email, password, projectId, continueWithCode, codePassword
     } = req.body;        
     let errors = [];
     const rolesProcs = new Roles.Procs(currentTicket);
@@ -325,7 +329,7 @@ router.post('/login', async (req, res) => {
             return await response.sendResponse();
         }
         
-        if(_.isNull(continueWithToken) || _.isEmpty(continueWithToken)){
+        if(_.isNull(continueWithCode) || _.isEmpty(continueWithCode)){
              // Email
             if(_.isNull(email) || _.isEmpty(email)){
                 errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
@@ -364,11 +368,28 @@ router.post('/login', async (req, res) => {
         else
         {
             if(email || password || projectId){
-                response.set(400, false, null, null, "Send only token without including any additional attributes (remove 'continueWithToken' from your request).");
+                response.set(400, false, null, null, "Send only token without including any additional attributes (remove 'continueWithCode', 'codePassword' from your request).");
                 return await response.sendResponse();
             }
 
-            const userID = await authProcs.userTokenVerify(continueWithToken, req.ip);
+            const codeData = await authProcs.userTokenVerifyAll(continueWithCode, req.ip);
+
+            if(!codeData || !codeData.userId){
+                
+                response.set(401, false);
+                return await response.sendResponse();
+            }            
+
+            if(codeData.data && !_.isNull(codeData.data) && !_.isEmpty(codeData.data)){
+                if(codeData !== codePassword){
+                    // The codePassword not matched
+                    
+                    response.set(401, false);
+                    return await response.sendResponse();
+                }
+            }
+            
+            const userID = codeData.userId;
 
             if(!userID || userID <= 0){
                 response.set(401, false);
@@ -1169,14 +1190,14 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                 type: integer
  *                 nullable: true
  *                 description: (Optional) projectId
- *         required:
- *           - email
- *           - clientUri
+ *             required:
+ *              - email
+ *              - clientUri
  *     security:
  *       - JWT: []
  *     responses:
  *       '200':
- *         description: The "generateOTPFor2StepVerification" operation has been successfully completed, an email containing a callback URL will be sent to user.
+ *         description: Operation was successfuly.
  *         content:
  *           application/json:
  *             schema:
@@ -1193,13 +1214,15 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                   description: Indicates if the operation was successful
  *                   example: true
  *                 errors:
- *                   type: array
- *                   items:
- *                     type: string
- *                   description: List of errors (null in case of success)
- *                 data:
  *                   type: object
  *                   example: null
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     code:
+ *                       type: string
+ *                       description: Must be used in the /auth/login endpoint.
+ *                       example: 79c7fa3f-bf20-4bd2-a748-0edecc431ede 
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -1288,39 +1311,27 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
 
         const accessExpiresAt = new Date();        
 
-        accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
-        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OTPFor2Step');
+        accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));              
+        const verificationCode = Math.floor(1000 + Math.random() * 9000);
+        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OTPFor2Step', verificationCode.toString());
         
         if(!token){
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
         }
-        const queryParams = {
-            token: token,
-            email: email
-        };
-
-        const callbackUrl = url.format({
-            pathname: clientUri,
-            query: queryParams
-        });
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,            
-            subject: 'Confirm your identity - Application ' + projectId + ', Bomdev',
-            html: 'Hi, please confirm your identity to complete log in in the ' + projectId + ' application. </br><a href="' + callbackUrl + '">Click here</a> to verify your identity.</br></br>Expires at ' + accessExpiresAt.toString() + '</br></br>Bomdev Software House'
+            subject: 'Confirm your identity - Application ' + projectId + ' - Bomdev',
+            html: `Hi, please confirm your identity. Your verification code is:</br>${verificationCode}</br></br></br>Expires at ${accessExpiresAt.toString()}</br></br>Bomdev Software House`
         };
-
-        // I not prefer to show the token in the request; it's sounds more secure to me
-        // const result = {
-        //     token: token,
-        //     email: email,
-        //     callbackUrl: callbackUrl
-        // };
-
+       
         mail.sendEmail(mailOptions, projectId, currentTicket);
 
-        response.set(200, true, null, null);
+        response.set(200, true, null, {
+            code: token
+        }, 'An email has been sent to the user. Use /auth/login to complete the authentication.');
+
         return await response.sendResponse();
     }
     catch(err){                 
