@@ -541,7 +541,7 @@ router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
  *     parameters:
  *       - name: code
  *         in: query
- *         description: The callback code received with context for get user profile.
+ *         description: The returns of the /auth/login endpoint.
  *         required: true
  *         type: string
  *         maxLength: 100
@@ -550,6 +550,55 @@ router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
  *     responses:
  *       '200':
  *         description: Operation was successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Get data was successful.
+ *                 ticket:
+ *                   type: string
+ *                   example: 423dd3d4-da04-405b-a382-3e310da088a1
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 errors:
+ *                   type: string
+ *                   nullable: true
+ *                   example: null
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: integer
+ *                       example: 2
+ *                     firstName:
+ *                       type: string
+ *                       example: User first name
+ *                     lastName:
+ *                       type: string
+ *                       example: User last name
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                     defaultLanguage:
+ *                       type: string
+ *                       example: pt-br
+ *                     picture:
+ *                       type: string
+ *                       format: uri
+ *                       example: https://example.com.br/assets/img/example.png
+ *                     projectId:
+ *                       type: integer
+ *                       example: 1
+ *                     emailConfirmed:
+ *                       type: boolean
+ *                       example: true
+ *                     enabled:
+ *                       type: boolean
+ *                       example: true
  *       '400':
  *         description: Bad request, verify your request data.
  *       '401':
@@ -620,6 +669,11 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
             },
             attributes:['userId', 'firstName', 'lastName', 'email', 'defaultLanguage', 'picture', 'projectId', 'emailConfirmed', 'enabled']                                    
         });
+
+        if(!data){
+            response.set(401, false);
+            return await response.sendResponse();
+        }
 
         response.set(200, true, null, data, 'Get data was successful.');
         return await response.sendResponse();

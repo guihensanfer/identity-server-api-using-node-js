@@ -339,7 +339,7 @@ call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
 select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' order by data desc
  SELECT userID, processName, data 
     FROM UserToken 
-    WHERE token = 'a18f9293-db38-11ee-b4e8-d08e79e09abc'     
+    WHERE token = '7f75eafb-4603-11ef-97ea-d08e79e09abc'     
     AND (null IS NULL OR requestIp = 1)
     AND enabled = 1
     AND expiredAt > NOW()    
@@ -353,7 +353,7 @@ update Users set emailConfirmed = 1
 
 select * from HttpRequestsLogs  order by createdAt desc
 select * from OperationLogs 
-where ticket= '82929ca5-20a0-4027-86b1-c05c8e88e9e5' 
+where is_checkpoint=1
 order by operationLogId desc
 
 select * from ErrorLogs order by errorID desc

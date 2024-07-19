@@ -1182,17 +1182,12 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                 type: string
  *                 format: email
  *                 maxLength: 200
- *               clientUri:
- *                 type: string
- *                 example: https://example.com.br
- *                 description: This Uri will be utilized in the email. Upon clicking, it will be accompanied by a token.
  *               projectId:
  *                 type: integer
  *                 nullable: true
  *                 description: (Optional) projectId
  *             required:
  *              - email
- *              - clientUri
  *     security:
  *       - JWT: []
  *     responses:
@@ -1238,7 +1233,7 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();       
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId, clientUri
+        email, projectId
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -1277,16 +1272,7 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
             if(!project){
                 errors.push('ProjectId is invalid.');
             }
-        }
-
-        // clientUri
-        if(_.isNull(clientUri) || _.isEmpty(clientUri)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUri'));            
-        }
-        else if(!util.isValidURI(clientUri))
-        {
-            errors.push('clientUri is invalid.');
-        }
+        }  
 
         // ----- Check for errors
         if(errors && errors.length > 0){
