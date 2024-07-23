@@ -381,7 +381,7 @@ router.post('/login', async (req, res) => {
             }            
 
             if(codeData.data && !_.isNull(codeData.data) && !_.isEmpty(codeData.data)){
-                if(codeData !== codePassword){
+                if(codeData.data !== codePassword){
                     // The codePassword not matched
                     
                     response.set(401, false);
