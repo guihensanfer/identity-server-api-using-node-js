@@ -89,6 +89,8 @@ const corsOptions = {
     origin: '*', // Permitir todas as origens, você pode especificar 'http://localhost:3000' para maior segurança
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
     allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+    preflightContinue: false,
+    
   };
   
   app.use(cors(corsOptions));

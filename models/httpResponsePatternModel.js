@@ -74,6 +74,7 @@ class HTTPResponsePatternModel{
       return new Promise(async (resolve, reject) => {
         try{
           let response = { 
+              statusCode: this._statusCode,
               message: this.message,
               ticket: this.ticket,
               success: this.success,
