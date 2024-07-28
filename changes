@@ -32,3 +32,5 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 * login without password (login with email and code numbers)
 
 * improve the refreshtoken process login with a 'count' sequence to turn it more hard to intercept by hackers access
+
+*** security -> check if the loginWithCode is the refresh or otp token, because can the bad user try to login with a different token

@@ -510,14 +510,14 @@ router.post('/login', async (req, res) => {
  * @swagger
  * /auth/login/external/redirect:
  *   get:
- *     summary: Redirect to the external authentication provider.
+ *     summary: Redirect to the external authentication provider (made this from a browser HTTP redirection).
  *     description: This request should be made from a browser and will result in an HTTP redirection.
  *     tags:
  *       - Auth
  *     parameters:
- *       - name: token
+ *       - name: codeForRedirect
  *         in: query
- *         description: Token with context for redirect.
+ *         description: Code with context for redirect.
  *         required: true
  *         type: string
  *         maxLength: 100
@@ -535,13 +535,13 @@ router.get('/login/external/redirect', async (req, res) => {
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);   
     // From auth jwt
-    const token = req.query.token;
+    const codeForRedirect = req.query.codeForRedirect;
 
     try
     {
         
         // token
-        if(_.isNull(token) || _.isEmpty(token)){
+        if(_.isNull(codeForRedirect) || _.isEmpty(codeForRedirect)){
             errors.push(httpP.HTTPResponsePatternModel.requiredMsg('token'));
         }
 
@@ -552,7 +552,7 @@ router.get('/login/external/redirect', async (req, res) => {
         }                                  
         
         // Check token
-        const tokenRedirect = await authProcs.userTokenVerifyAll(token);
+        const tokenRedirect = await authProcs.userTokenVerifyAll(codeForRedirect);
         
         if(!tokenRedirect || tokenRedirect.result <= 0 || !tokenRedirect.data || _.isNull(tokenRedirect.data) || _.isEmpty(tokenRedirect.data)){
             response.set(401, false);
@@ -576,22 +576,10 @@ router.get('/login/external/redirect', async (req, res) => {
  * @swagger
  * /auth/login/external/google:
  *   post:
- *     summary: Token for logging in with Google.
+ *     summary: Code for logging in with Google (after use this, then request the /external/redirect from your browser).
  *     description: Allows you to generate a token to use in the /external/redirect endpoint for completing the login process with Google.
  *     tags:
  *       - Auth
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               redirectUri:
- *                 type: string
- *                 format: uri
- *                 maxLength: 500
- *             required:
- *               - redirectUri
  *     security:
  *       - JWT: []
  *     responses:
@@ -619,13 +607,13 @@ router.get('/login/external/redirect', async (req, res) => {
  *                 data:
  *                   type: object
  *                   properties:
- *                     tokenForRedirect:
+ *                     codeForRedirect:
  *                       type: string
- *                       description: Token allows you to use in the /external/redirect endpoint.
+ *                       description: Code allows you to use in the /external/redirect endpoint.
  *                     expiresAt:
  *                       type: string
  *                       format: date-time
- *                       description: Token expiration date and time
+ *                       description: Code expiration date and time
  *       '400':
  *         description: Bad request, verify your request data.
  *       '422':
@@ -638,7 +626,7 @@ router.get('/login/external/redirect', async (req, res) => {
 router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
-    var { redirectUri } = req.body;        
+    // var { redirectUri } = req.body;        
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);   
     // From auth jwt
@@ -652,16 +640,16 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
             return await response.sendResponse();
         }
 
-        // Redirect Uri
-        if(_.isNull(redirectUri) || _.isEmpty(redirectUri)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Redirect Uri'));
-        }
-        else if(redirectUri.length > 500){            
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Redirect Uri'));        
-        }     
-        else if(!util.isValidURI(redirectUri))  {
-            errors.push('Invalid Redirect Uri');        
-        }
+        // // Redirect Uri
+        // if(_.isNull(redirectUri) || _.isEmpty(redirectUri)){
+        //     errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Redirect Uri'));
+        // }
+        // else if(redirectUri.length > 500){            
+        //     errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Redirect Uri'));        
+        // }     
+        // else if(!util.isValidURI(redirectUri))  {
+        //     errors.push('Invalid Redirect Uri');        
+        // }
 
         // ProjectId
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
@@ -706,7 +694,7 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         const tokenForRedirect = await authProcs.userTokenCreate(req.user.id, redirectTokenExpiresAt,null, 'EXTERNAL_OAUTH_REDIRECT', url);
 
         const result = {
-            tokenForRedirect: tokenForRedirect,
+            codeForRedirect: tokenForRedirect,
             expiresAt: redirectTokenExpiresAt
         }
         response.set(200, true, null, result);

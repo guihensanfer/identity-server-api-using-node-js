@@ -336,7 +336,7 @@ select * from UsersRoles
 update UsersRoles set roleId = 1 where userId = 2
 
 call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
-select * from UserToken where token = '5c0d8a1f-dd7e-11ee-b4e8-d08e79e09abc' order by data desc
+select * from UserToken where token = '694bfac8-4cee-11ef-952a-e97074f57156' order by data desc
  SELECT userID, processName, data 
     FROM UserToken 
     WHERE token = '7f75eafb-4603-11ef-97ea-d08e79e09abc'     
