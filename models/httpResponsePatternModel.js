@@ -177,29 +177,6 @@ class HTTPResponsePatternModel{
       return HTTPResponsePatternModel.auth(RolesModel.superUserGroup);
     }
 
-
-    static getUserIdByRefreshToken(checkRefreshToken) {
-      let token = checkRefreshToken;      
-    
-      if (!token) {
-        return 0;
-      }
-  
-      try {
-        let secret = process.env.SECRET_FOR_REFRESH;
-  
-        jwt.verify(token, secret, (err, decoded) => {
-          if (err) {
-            return 0;
-          }    
-
-          return decoded.userId;
-        });
-      } catch {
-        return 0;
-      }
-  }
-
     static getDescByStatusCode(statusCode){
         const statusDescriptions = [
             {
