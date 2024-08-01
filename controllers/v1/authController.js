@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const _ = require('lodash');
 const Auth = require('../../repositories/authRepository');
+const oAuthRep = require('../../repositories/oAuthRepository');
 const util = require('../../services/utilService');
 const mail = require('../../services/mailService');
 const DocumentTypesModel = require('../../models/documentTypesModel');
@@ -634,11 +635,11 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
 
     try
     {
-        if (Object.keys(req.body).length === 0) {
-            response.set(400,false);
+        // if (Object.keys(req.body).length === 0) {
+        //     response.set(400,false);
 
-            return await response.sendResponse();
-        }
+        //     return await response.sendResponse();
+        // }
 
         // // Redirect Uri
         // if(_.isNull(redirectUri) || _.isEmpty(redirectUri)){
@@ -676,8 +677,17 @@ router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdm
         }                                  
         
         // Create tokens
+        const oAuthProcs = new oAuthRep.Procs(currentTicket);
         const redirectTokenExpiresAt = new Date();        
-        const dataTokenExpiresAt = new Date();        
+        const dataTokenExpiresAt = new Date();               
+        const userContext = await oAuthProcs.getCallbackContext(req.user.id, projectId); 
+
+        if(!userContext || _.isNull(userContext.clientCallbackUri) || _.isEmpty(userContext.clientCallbackUri)){
+            response.set(422, false, ['You need to define your callbackUri context first. Use the /oauth/set-context endpoint to do it.']);
+            return await response.sendResponse();
+        }
+
+        const redirectUri = userContext.clientCallbackUri;
 
         redirectTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));
         dataTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION) + 15);

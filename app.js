@@ -87,7 +87,7 @@ const app = express();
 
 const corsOptions = {
     origin: '*', // Permitir todas as origens, você pode especificar 'http://localhost:3000' para maior segurança
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
+    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], // Métodos permitidos
     allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
     preflightContinue: false,
     
