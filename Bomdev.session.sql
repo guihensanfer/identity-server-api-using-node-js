@@ -339,7 +339,7 @@ call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
 select * from UserToken where token = '694bfac8-4cee-11ef-952a-e97074f57156' order by data desc
  SELECT userID, processName, data 
     FROM UserToken 
-    WHERE token = '422d3442-4dae-11ef-97ea-d08e79e09abc'     
+    WHERE token = 'ca42306e-501c-11ef-956f-ea73833580e2'     
     AND (null IS NULL OR requestIp = 1)
     AND enabled = 1
     AND expiredAt > NOW()    

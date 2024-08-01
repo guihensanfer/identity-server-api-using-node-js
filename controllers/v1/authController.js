@@ -407,6 +407,15 @@ router.post('/login', async (req, res) => {
                 response.set(401, false);
                 return await response.sendResponse();
             }            
+            
+            // Update the user status
+            await Auth.data.update({
+                emailConfirmed: true
+            },{
+                where:{
+                    userId: user.userId
+                }
+            })
 
             email = user.email;
             projectId = user.projectId;
@@ -576,7 +585,7 @@ router.get('/login/external/redirect', async (req, res) => {
 /**
  * @swagger
  * /auth/login/external/google:
- *   post:
+ *   get:
  *     summary: Code for logging in with Google (after use this, then request the /external/redirect from your browser).
  *     description: Allows you to generate a token to use in the /external/redirect endpoint for completing the login process with Google.
  *     tags:
@@ -624,7 +633,7 @@ router.get('/login/external/redirect', async (req, res) => {
  *       '500':
  *         description: Internal Server Error.
  */
-router.post('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
+router.get('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
     // var { redirectUri } = req.body;        

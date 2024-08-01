@@ -667,7 +667,18 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
                 userId:userId,
                 projectId:projectId // secury to get the same users projectId from the user request
             },
-            attributes:['userId', 'firstName', 'lastName', 'email', 'defaultLanguage', 'picture', 'projectId', 'emailConfirmed', 'enabled']                                    
+            attributes:[
+                'userId', 
+                'firstName', 
+                'lastName', 
+                'email', 
+                'defaultLanguage', 
+                'picture', 
+                'projectId', 
+                'emailConfirmed', 
+                'enabled',
+                [sequelize.literal("CASE WHEN password IS NULL OR password = '' THEN true ELSE false END"), 'isPasswordEmpty']
+            ]                                    
         });
 
         if(!data){

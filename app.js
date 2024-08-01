@@ -85,15 +85,12 @@ const app = express();
 //     credentials: true, // Permite cookies entre domínios
 //   };
 
-const corsOptions = {
-    origin: '*', // Permitir todas as origens, você pode especificar 'http://localhost:3000' para maior segurança
-    methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], // Métodos permitidos
-    allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
-    preflightContinue: false,
-    
-  };
-  
-  app.use(cors(corsOptions));
+app.use(cors({
+    origin: 'http://localhost:4200', // Substitua pelo domínio correto
+    methods: 'GET, POST, PUT, DELETE', // Métodos permitidos
+    credentials: true // Se necessário, para permitir cookies e autenticação
+}));
+
 
 app.use(express.json());
 app.listen(3000);
