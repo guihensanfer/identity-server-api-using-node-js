@@ -104,6 +104,19 @@ class Procs extends idb{
           return false;
         }
       }
+
+    async getUserInfo(userId){
+        try 
+        {
+            const res = await db.executeProcedure('USP_OAUTH_USER_INFO', [userId], this.ticket);
+            
+            return res[0][0][0];
+        } 
+        catch 
+        {
+            return false;
+        }
+    }
 }
 
 module.exports = {

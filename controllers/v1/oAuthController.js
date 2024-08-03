@@ -555,12 +555,15 @@ router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
  *             schema:
  *               type: object
  *               properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
  *                 message:
  *                   type: string
  *                   example: Get data was successful.
  *                 ticket:
  *                   type: string
- *                   example: 423dd3d4-da04-405b-a382-3e310da088a1
+ *                   example: 5ed974eb-904f-4ef0-91ac-45cadc8abc6b
  *                 success:
  *                   type: boolean
  *                   example: true
@@ -571,38 +574,54 @@ router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
  *                 data:
  *                   type: object
  *                   properties:
- *                     userId:
- *                       type: integer
- *                       example: 2
- *                     firstName:
- *                       type: string
- *                       example: User first name
- *                     lastName:
- *                       type: string
- *                       example: User last name
- *                     email:
- *                       type: string
- *                       format: email
- *                     defaultLanguage:
- *                       type: string
- *                       example: pt-br
- *                     picture:
- *                       type: string
- *                       format: uri
- *                       example: https://example.com.br/assets/img/example.png
- *                     projectId:
- *                       type: integer
- *                       example: 1
- *                     emailConfirmed:
- *                       type: boolean
- *                       example: true
- *                     enabled:
- *                       type: boolean
- *                       example: true
+ *                     userInfo:
+ *                       type: object
+ *                       properties:
+ *                         userId:
+ *                           type: integer
+ *                           example: 2
+ *                         firstName:
+ *                           type: string
+ *                           example: OAuth
+ *                         lastName:
+ *                           type: string
+ *                           example: Bomdev
+ *                         email:
+ *                           type: string
+ *                           format: email
+ *                           example: oauth@bomdev.com.br
+ *                         defaultLanguage:
+ *                           type: string
+ *                           example: pt-br
+ *                         picture:
+ *                           type: string
+ *                           format: uri
+ *                           example: 'https://example.com.br/assets/img/example.png'
+ *                         projectId:
+ *                           type: integer
+ *                           example: 1
+ *                         emailConfirmed:
+ *                           type: boolean
+ *                           example: true
+ *                         enabled:
+ *                           type: boolean
+ *                           example: true
+ *                         isPasswordEmpty:
+ *                           type: boolean
+ *                           example: true
+ *                     operations:
+ *                       type: object
+ *                       properties:
+ *                         resetPasswordQuickly:
+ *                           type: object
+ *                           properties:
+ *                             code:
+ *                               type: string
+ *                               example: df96165b-50e1-11ef-963b-ec7daeeea15b
  *       '400':
  *         description: Bad request, verify your request data.
  *       '401':
- *         description: Log in unauthorized. 
+ *         description: Log in unauthorized.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
  *       '500':
@@ -661,32 +680,33 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
         if(!userId || userId <= 0){
             errors.push(httpP.HTTPResponsePatternModel.cannotGetMsg('User from Request'));
         }            
-         
-        const data = await Auth.data.findOne({
-            where:{
-                userId:userId,
-                projectId:projectId // secury to get the same users projectId from the user request
-            },
-            attributes:[
-                'userId', 
-                'firstName', 
-                'lastName', 
-                'email', 
-                'defaultLanguage', 
-                'picture', 
-                'projectId', 
-                'emailConfirmed', 
-                'enabled',
-                [sequelize.literal("CASE WHEN password IS NULL OR password = '' THEN true ELSE false END"), 'isPasswordEmpty']
-            ]                                    
-        });
+        const accessExpiresAt = new Date();
+        accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
+        const codeForResetPassword = await authProcs.userTokenCreate(userId, accessExpiresAt, req.ip, 'RESET_PASSWORD_FROM_USER_INFO');
+        const oAuthProcs = new oAuth.Procs(currentTicket);
+        const userInfo = await oAuthProcs.getUserInfo(userId);
 
-        if(!data){
+        if(!userInfo){
             response.set(401, false);
             return await response.sendResponse();
         }
+        
+        // Convert 0/1 to boolean
+        userInfo.emailConfirmed = !!userInfo.emailConfirmed;
+        userInfo.enabled = !!userInfo.enabled;
+        userInfo.isPasswordEmpty = !!userInfo.isPasswordEmpty;
 
-        response.set(200, true, null, data, 'Get data was successful.');
+        const result = {
+            userInfo: userInfo,
+            operations:{
+                resetPasswordQuickly:{
+                    code: codeForResetPassword
+                }
+            }
+        }
+
+
+        response.set(200, true, null, result, 'Get data was successful.');
         return await response.sendResponse();
     }
     catch(err){

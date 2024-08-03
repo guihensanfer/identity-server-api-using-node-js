@@ -270,6 +270,24 @@ BEGIN
     and (_secretKeyOP is null or oa.clientSecret = _secretKeyOP);
 END;
 
+drop procedure if exists USP_OAUTH_USER_INFO;
+create procedure USP_OAUTH_USER_INFO(in _userIdOP int)
+BEGIN 
+    select 
+        userId, 
+        firstName, 
+        lastName, 
+        email, 
+        defaultLanguage, 
+        picture, 
+        projectId, 
+        emailConfirmed, 
+        enabled,
+        (CASE WHEN password IS NULL OR password = '' THEN true ELSE false END) as isPasswordEmpty
+    from Users u
+    where u.userId = _userIdOP;
+END;
+
 ----------------------------------------------------------------------------
 
 
