@@ -1056,7 +1056,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
  *           schema:
  *             type: object
  *             properties:
- *               token:
+ *               code:
  *                 type: string
  *               newPassword:
  *                 type: string
@@ -1104,7 +1104,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
-        token, newPassword
+        code, newPassword
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -1118,8 +1118,8 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }
         
          // Token
-         if(_.isNull(token) || _.isEmpty(token)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Token'));            
+         if(_.isNull(code) || _.isEmpty(code)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('code'));            
         }
        
         
@@ -1139,7 +1139,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }
     
         // Check token
-        const _userID = await authProcs.userTokenVerify(token, req.ip);
+        const _userID = await authProcs.userTokenVerify(code, req.ip);
 
         if(!_userID || _userID <= 0){
             response.set(401, false);
