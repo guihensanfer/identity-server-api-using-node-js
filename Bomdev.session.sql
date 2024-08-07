@@ -194,7 +194,7 @@ BEGIN
     SELECT userID, processName, data 
     FROM UserToken 
     WHERE token = p_token     
-    AND (p_codeName is null OR processName = p_codeName)
+    AND (p_processName is null OR processName = p_processName)
     AND (p_requestIP IS NULL OR requestIp = p_requestIP)
     AND enabled = 1
     AND expiredAt > NOW()    

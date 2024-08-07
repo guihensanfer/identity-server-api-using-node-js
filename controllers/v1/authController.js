@@ -392,7 +392,7 @@ router.post('/login', async (req, res) => {
                     response.set(401, false);
                     return await response.sendResponse();
                 }            
-                else if(codeDataToObj.verificationCode !== codePassword){
+                else if(codeDataToObj.verificationCode?.toString() !== codePassword){
                     // The codePassword not matched
                     
                     response.set(401, false);
@@ -400,6 +400,11 @@ router.post('/login', async (req, res) => {
                 }      
                 
                 resultUserId = codeDataOTP.userId;
+
+                // Reset password
+                if(codeDataToObj.resetUserPassword){
+                    await Auth.resetPassword(user.userId, null, currentTicket, true);
+                }
             }
             // Log in using refresh token
             else if(codeDataRefreshToken){
@@ -459,11 +464,7 @@ router.post('/login', async (req, res) => {
                 email: email,
                 projectId: projectId
             }
-        });
-
-        if(codeDataToObj.resetUserPassword){
-            await Auth.resetPassword(user.userId, null, currentTicket, true);
-        }
+        });        
 
         if(!user){
             response.set(404, false);
