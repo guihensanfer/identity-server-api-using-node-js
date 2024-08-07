@@ -207,18 +207,18 @@ class Procs extends idb{
     }
   }  
 
-  async userTokenVerify(token, requestIp = null) {
+  async userTokenVerify(token, requestIp = null, processName = null) {
     try {
-      const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp], this.ticket);
+      const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp, processName], this.ticket);
       return res[0][0][0].userId;
     } catch {
       return null;
     }
   }
 
-  async userTokenVerifyAll(token, requestIp = null) {
+  async userTokenVerifyAll(token, requestIp = null, processName = null) {
     try {
-      const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp], this.ticket);
+      const res = await db.executeProcedure('USP_UserToken_Check', [token, requestIp, processName], this.ticket);
       return res[0][0][0];
     } catch {
       return null;

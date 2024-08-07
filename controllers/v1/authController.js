@@ -16,7 +16,7 @@ const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
-const googleAuthRedirectUri = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
+const googleAuthRedirectUrl = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
  * @swagger
@@ -373,24 +373,49 @@ router.post('/login', async (req, res) => {
                 return await response.sendResponse();
             }
 
-            const codeData = await authProcs.userTokenVerifyAll(continueWithCode, req.ip);
+            let resultUserId = 0;
 
-            if(!codeData || !codeData.userId){
-                
-                response.set(401, false);
-                return await response.sendResponse();
-            }            
+            
+            const codeDataOTP = await authProcs.userTokenVerifyAll(continueWithCode, req.ip, 'OTPFor2Step');
+            const codeDataRefreshToken = await authProcs.userTokenVerifyAll(continueWithCode, req.ip, 'REFRESH_TOKEN');
 
-            if(codeData.data && !_.isNull(codeData.data) && !_.isEmpty(codeData.data)){
-                if(codeData.data !== codePassword){
+            // Log in using OTP
+            if(codeDataOTP){
+                // Get the json data from code data
+                // verificationCode int (the code provider by user when it sent by email)
+                // resetUserPassword boolean
+
+                const codeDataToObj = util.convertToJSON(codeDataOTP?.data);
+
+                if(!codeDataToObj || codeDataToObj.verificationCode === undefined || !codeDataOTP.userId){
+                    
+                    response.set(401, false);
+                    return await response.sendResponse();
+                }            
+                else if(codeDataToObj.verificationCode !== codePassword){
                     // The codePassword not matched
                     
                     response.set(401, false);
                     return await response.sendResponse();
-                }
+                }      
+                
+                resultUserId = codeDataOTP.userId;
+            }
+            // Log in using refresh token
+            else if(codeDataRefreshToken){
+                resultUserId = codeDataRefreshToken?.userId;
+            }
+            else
+            {
+                // Code wasn't identified, check the code processName or the code expiration time
+                response.set(401, false);
+                return await response.sendResponse();
             }
             
-            const userID = codeData.userId;
+            
+
+            
+            const userID = resultUserId;
 
             if(!userID || userID <= 0){
                 response.set(401, false);
@@ -435,6 +460,10 @@ router.post('/login', async (req, res) => {
                 projectId: projectId
             }
         });
+
+        if(codeDataToObj.resetUserPassword){
+            await Auth.resetPassword(user.userId, null, currentTicket, true);
+        }
 
         if(!user){
             response.set(404, false);
@@ -636,7 +665,7 @@ router.get('/login/external/redirect', async (req, res) => {
 router.get('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
-    // var { redirectUri } = req.body;        
+    // var { redirectUrl } = req.body;        
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);   
     // From auth jwt
@@ -650,15 +679,15 @@ router.get('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdmi
         //     return await response.sendResponse();
         // }
 
-        // // Redirect Uri
-        // if(_.isNull(redirectUri) || _.isEmpty(redirectUri)){
-        //     errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Redirect Uri'));
+        // // Redirect Url
+        // if(_.isNull(redirectUrl) || _.isEmpty(redirectUrl)){
+        //     errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Redirect Url'));
         // }
-        // else if(redirectUri.length > 500){            
-        //     errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Redirect Uri'));        
+        // else if(redirectUrl.length > 500){            
+        //     errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Redirect Url'));        
         // }     
-        // else if(!util.isValidURI(redirectUri))  {
-        //     errors.push('Invalid Redirect Uri');        
+        // else if(!util.isValidURI(redirectUrl))  {
+        //     errors.push('Invalid Redirect Url');        
         // }
 
         // ProjectId
@@ -691,25 +720,25 @@ router.get('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdmi
         const dataTokenExpiresAt = new Date();               
         const userContext = await oAuthProcs.getCallbackContext(req.user.id, projectId); 
 
-        if(!userContext || _.isNull(userContext.clientCallbackUri) || _.isEmpty(userContext.clientCallbackUri)){
-            response.set(422, false, ['You need to define your callbackUri context first. Use the /oauth/set-context endpoint to do it.']);
+        if(!userContext || _.isNull(userContext.clientCallbackUrl) || _.isEmpty(userContext.clientCallbackUrl)){
+            response.set(422, false, ['You need to define your callbackUrl context first. Use the /oauth/set-context endpoint to do it.']);
             return await response.sendResponse();
         }
 
-        const redirectUri = userContext.clientCallbackUri;
+        const redirectUrl = userContext.clientCallbackUrl;
 
         redirectTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));
         dataTokenExpiresAt.setMinutes(redirectTokenExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION) + 15);
         
         const ourParamData = {
             projectId: projectId,
-            redirectUri: redirectUri,
+            redirectUrl: redirectUrl,
             originRequestIp: req.ip, // Used to improve secure on the final callback redirect (prevent http intercepts token parameter)
             provider: 'Google'
         };
         const tokenForData = await authProcs.userTokenCreate(req.user.id, dataTokenExpiresAt, null, 'EXTERNAL_OAUTH_DATA', JSON.stringify(ourParamData));        
         const clientId = process.env.GOOGLE_CLIENT_ID;  
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUri}&response_type=code&scope=profile email&state=${encodeURIComponent(tokenForData)}`;
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUrl}&response_type=code&scope=profile email&state=${encodeURIComponent(tokenForData)}`;
         const tokenForRedirect = await authProcs.userTokenCreate(req.user.id, redirectTokenExpiresAt,null, 'EXTERNAL_OAUTH_REDIRECT', url);
 
         const result = {
@@ -744,7 +773,7 @@ router.get('/login/external/google/callback', async (req, res) => {
         client_id: clientId,
         client_secret: clientSecret,
         code,
-        redirect_uri: googleAuthRedirectUri,
+        redirect_uri: googleAuthRedirectUrl,
         grant_type: 'authorization_code',
       });
   
@@ -764,10 +793,10 @@ router.get('/login/external/google/callback', async (req, res) => {
             const provider = obj.provider;
 
             if(provider && provider == 'Google'){
-                let redirectUri = obj.redirectUri;
+                let redirectUrl = obj.redirectUrl;
                 const projectId = obj.projectId;
 
-                if(!redirectUri)
+                if(!redirectUrl)
                 {
                     response.set(400, false, null, null, 'Invalid origin data redirect uri.');      
                     return await response.sendResponse();    
@@ -831,9 +860,9 @@ router.get('/login/external/google/callback', async (req, res) => {
                     throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('Token for first login'));
                 }
 
-                redirectUri += `?token=${tokenFirstLogin}`;
+                redirectUrl += `?token=${tokenFirstLogin}`;
 
-                res.redirect(redirectUri);
+                res.redirect(redirectUrl);
             }
             else
             {
@@ -855,75 +884,12 @@ router.get('/login/external/google/callback', async (req, res) => {
   });
 
 
-/**
- * @swagger
- * /auth/forget-password:
- *   post:
- *     summary: Generate and send an email with a token.
- *     description: It is the first step, generate and send an email with a link to click and complete the resetpassword endpoint.
- *     tags:
- *       - Auth
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 maxLength: 200
- *               clientUri:
- *                 type: string
- *                 example: https://example.com.br
- *             required:
- *               - email
- *               - clientUri
- *     security:
- *       - JWT: []
- *     responses:
- *       '200':
- *         description: The "forget password" operation has been successfully completed, an email containing a callback URL will be sent to user.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 ticket:
- *                   type: string
- *                   description: The ticket of the request
- *                 message:
- *                   type: string
- *                   description: Message indicating successful operation
- *                 success:
- *                   type: boolean
- *                   description: Indicates if the operation was successful
- *                   example: true
- *                 errors:
- *                   type: array
- *                   items:
- *                     type: string
- *                   description: List of errors (null in case of success)
- *                 data:
- *                   type: object
- *                   example: null
- *       '400':
- *         description: Bad request, verify your request data.
- *       '422':
- *         description: Unprocessable entity, the provided data is not valid.
- *       '404':
- *         description: User not found.
- *       '401':
- *         description: Log in unauthorized.
- *       '500':
- *         description: Internal Server Error.
- */
+// disabled to use otp by priority
 router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {    
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId, clientUri
+        email, projectId, clientUrl
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -964,13 +930,13 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
             }
         }
 
-        // clientUri
-        if(_.isNull(clientUri) || _.isEmpty(clientUri)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUri'));            
+        // clientUrl
+        if(_.isNull(clientUrl) || _.isEmpty(clientUrl)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('clientUrl'));            
         }
-        else if(!util.isValidURI(clientUri))
+        else if(!util.isValidURI(clientUrl))
         {
-            errors.push('clientUri is invalid.');
+            errors.push('clientUrl is invalid.');
         }
 
         // ----- Check for errors
@@ -1008,7 +974,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
         };
 
         const callbackUrl = url.format({
-            pathname: clientUri,
+            pathname: clientUrl,
             query: queryParams
         });
 
@@ -1139,7 +1105,8 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }
     
         // Check token
-        const _userID = await authProcs.userTokenVerify(code, req.ip);
+        // If you want to active the forget-password endpoint, you need to add a new userToken verify validation using the forgetPassword processName code
+        const _userID = await authProcs.userTokenVerify(code, req.ip, 'RESET_PASSWORD_FROM_USER_INFO');
 
         if(!_userID || _userID <= 0){
             response.set(401, false);
@@ -1193,6 +1160,10 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *                 type: integer
  *                 nullable: true
  *                 description: (Optional) projectId
+ *               resetUserPassword:
+ *                 type: boolean
+ *                 nullable: true
+ *                 description: false
  *             required:
  *              - email
  *     security:
@@ -1240,7 +1211,9 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();       
     let currentTicket = response.getTicket(); 
     var { 
-        email, projectId
+        email, 
+        projectId,
+        resetUserPassword
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -1306,7 +1279,11 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
 
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));              
         const verificationCode = Math.floor(1000 + Math.random() * 9000);
-        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OTPFor2Step', verificationCode.toString());
+        const data = {
+            verificationCode: verificationCode,
+            resetUserPassword: resetUserPassword ?? false
+        };
+        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OTPFor2Step', JSON.stringify(data));
         
         if(!token){
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));

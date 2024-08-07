@@ -20,7 +20,7 @@ const data = db._sequealize.define('UsersOAuths', {
             key: 'userId'
         }        
     },
-    clientCallbackUri:{
+    clientCallbackUrl:{
         type: Sequelize.STRING(MAX_CALLBACKURI_LENGTH),
         allowNull:false
     },
@@ -37,7 +37,7 @@ const data = db._sequealize.define('UsersOAuths', {
 
 
 // Checkpoint method
-async function createUserCallback(userId, callbackUri, ticket) {  
+async function createUserCallback(userId, callbackUrl, ticket) {  
     const transaction = await data.sequelize.transaction();
     const operationLog = new db.OperationLogs("CREATE_USER_CALLBACK_METHOD", null, ticket, true);
     let successfully = true; 
@@ -54,7 +54,7 @@ async function createUserCallback(userId, callbackUri, ticket) {
             });
 
         const createdData = await data.create({
-            clientCallbackUri: callbackUri,
+            clientCallbackUrl: callbackUrl,
             enabled: true,
             userId: userId,
             clientSecret: uuidv4()      // always after changed set new secret  

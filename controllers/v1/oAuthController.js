@@ -152,12 +152,12 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
  *           schema:
  *             type: object
  *             properties:
- *               callbackUri:
+ *               callbackUrl:
  *                 type: string
  *                 maxLength: 300
  *                 example: https://exemple.com/auth.aspx
  *             required:
- *               - callbackUri
+ *               - callbackUrl
  *     security:
  *       - JWT: []
  *     responses:
@@ -175,7 +175,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
 router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (req, res) => {         
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     const currentTicket = response.getTicket(); 
-    var { callbackUri } = req.body;        
+    var { callbackUrl } = req.body;        
     let errors = [];  
 
     try
@@ -187,11 +187,11 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
         }
 
         // client callback
-        if(_.isNull(callbackUri) || _.isEmpty(callbackUri)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('callbackUri'));
+        if(_.isNull(callbackUrl) || _.isEmpty(callbackUrl)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('callbackUrl'));
         }
-        else if(callbackUri.length > oAuth.MAX_CALLBACKURI_LENGTH){            
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('callbackUri'));        
+        else if(callbackUrl.length > oAuth.MAX_CALLBACKURI_LENGTH){            
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('callbackUrl'));        
         }
         
         // ProjectId
@@ -226,7 +226,7 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
             return await response.sendResponse();
         }        
          
-        await oAuth.createUserCallback(userId, callbackUri, currentTicket);
+        await oAuth.createUserCallback(userId, callbackUrl, currentTicket);
 
         response.set(201, true, null, null, 'Set context was successful. A new secret code has been generete.');
         return await response.sendResponse();
@@ -285,7 +285,7 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *                     userId:
  *                       type: integer
  *                       example: 2
- *                     clientCallbackUri:
+ *                     clientCallbackUrl:
  *                       type: string
  *                       example: http://example.com.br/login/callback
  *                     clientSecret:

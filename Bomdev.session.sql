@@ -178,7 +178,8 @@ END;
 drop procedure if exists USP_UserToken_Check;
 CREATE PROCEDURE USP_UserToken_Check (
     IN p_token VARCHAR(50),    
-    IN p_requestIP VARCHAR(50)
+    IN p_requestIP VARCHAR(50),
+    IN p_processName VARCHAR(50)
 )
 BEGIN
     -- Tabela temporária para armazenar os resultados
@@ -193,6 +194,7 @@ BEGIN
     SELECT userID, processName, data 
     FROM UserToken 
     WHERE token = p_token     
+    AND (p_codeName is null OR processName = p_codeName)
     AND (p_requestIP IS NULL OR requestIp = p_requestIP)
     AND enabled = 1
     AND expiredAt > NOW()    
@@ -379,4 +381,4 @@ select * from ErrorLogs order by errorID desc
 
 select * from UsersOAuths where code = '422d3442-4dae-11ef-97ea-d08e79e09abc'
 
-update Users set projectId = 1 where userId = 2;
+select distinct processName from UserToken
