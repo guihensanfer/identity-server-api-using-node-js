@@ -290,6 +290,8 @@ BEGIN
     where u.userId = _userIdOP;
 END;
 
+ALTER TABLE UsersOAuths CHANGE clientCallbackUri clientCallbackUrl varchar(300);
+
 ----------------------------------------------------------------------------
 
 
@@ -381,3 +383,4 @@ select * from ErrorLogs order by errorID desc
 select * from UsersOAuths where code = '422d3442-4dae-11ef-97ea-d08e79e09abc'
 
 select distinct processName from UserToken
+
