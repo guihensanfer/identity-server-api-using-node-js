@@ -373,7 +373,6 @@ update Users set emailConfirmed = 1
 
 select * from HttpRequestsLogs  order by createdAt desc
 select * from OperationLogs 
-where is_checkpoint=0
 order by operationLogId desc
 
 select * from ErrorLogs order by errorID desc

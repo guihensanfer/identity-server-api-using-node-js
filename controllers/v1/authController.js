@@ -403,7 +403,7 @@ router.post('/login', async (req, res) => {
 
                 // Reset password
                 if(codeDataToObj.resetUserPassword){
-                    await Auth.resetPassword(user.userId, null, currentTicket, true);
+                    await Auth.resetPassword(codeDataOTP.userId, null, currentTicket, true);
                 }
             }
             // Log in using refresh token
@@ -1013,7 +1013,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
  * /auth/reset-password:
  *   put:
  *     summary: Change user password.
- *     description: Using token in the /forgetpassword end point, now will set a new user password.
+ *     description: Using /auth/otp and next /auth/login, use the result code to reset the user password.
  *     tags:
  *       - Auth
  *     requestBody:
@@ -1164,7 +1164,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *               resetUserPassword:
  *                 type: boolean
  *                 nullable: true
- *                 description: false
+ *                 example: false
  *             required:
  *              - email
  *     security:
