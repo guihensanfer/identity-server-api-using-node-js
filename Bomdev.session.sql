@@ -254,7 +254,7 @@ create procedure USP_OAUTH_CONTEXT_SELECT(in _userIdOP int, in _projectIdOP int,
 BEGIN 
     select 
         oa.userId, 
-        oa.clientCallbackUri, 
+        oa.clientCallbackUrl, 
         oa.clientSecret,
         u.firstName,
         u.lastName,
@@ -264,7 +264,8 @@ BEGIN
         p.projectId,
         p.name as projectName,
         p.description as projectDescription,
-        p.picture as projectPicture
+        p.picture as projectPicture,
+        p.passwordStrengthRegex projectPasswordStrengthRegex
     from UsersOAuths oa
     inner join Users u on u.userId = oa.userId
     inner join Projects p on p.projectId = u.projectId
@@ -291,6 +292,7 @@ BEGIN
 END;
 
 ALTER TABLE UsersOAuths CHANGE clientCallbackUri clientCallbackUrl varchar(300);
+ALTER TABLE Projects ADD passwordStrengthRegex varchar(200) null;
 
 ----------------------------------------------------------------------------
 
@@ -333,6 +335,7 @@ select * from UsersRoles where userId=3
 
 select * from Roles
 select * from Projects
+update Projects set passwordStrengthRegex='^.{4,}$';
 
 select * from EmailLogs order by emaillogid desc
 

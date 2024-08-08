@@ -320,6 +320,9 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *                       type: string
  *                       nullable: true
  *                       example: http://example.com.br/assets/img/picture.png
+ *                     projectPasswordStrengthRegex:
+ *                       type: string
+ *                       nullable: true
  *       '400':
  *         description: Bad request, verify your request data.
  *       '401':

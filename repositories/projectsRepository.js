@@ -20,6 +20,10 @@ const data = db._sequealize.define('Projects', {
     picture:{
         type: Sequelize.STRING(200),
         allowNull:true        
+    },
+    passwordStrengthRegex:{
+        type: Sequelize.STRING(200),
+        allowNull:true        
     }
 });
 
