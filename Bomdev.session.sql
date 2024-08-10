@@ -247,7 +247,7 @@ alter table UserToken add if not exists  disabledDate datetime null;
 alter table Users add if not exists  picture varchar(200) null;
 alter table UserToken add if not exists data varchar(500) null;
 
-alter table Projects add picture varchar(200) null;
+alter table Projects add if not exists picture varchar(200) null;
 
 drop procedure if exists USP_OAUTH_CONTEXT_SELECT;
 create procedure USP_OAUTH_CONTEXT_SELECT(in _userIdOP int, in _projectIdOP int, in _secretKeyOP varchar(100))
@@ -292,98 +292,54 @@ BEGIN
 END;
 
 ALTER TABLE UsersOAuths CHANGE clientCallbackUri clientCallbackUrl varchar(300);
-ALTER TABLE Projects ADD passwordStrengthRegex varchar(200) null;
+ALTER TABLE Projects ADD if not exists passwordStrengthRegex varchar(200) null;
 
 ----------------------------------------------------------------------------
 
 
 
-SET foreign_key_checks = 0;
-truncate table ErrorLogs;
-truncate table Users;
 
-SET foreign_key_checks = 1;
--- end script
-
-
--- select * from ProcedureStatistics 
--- order by execution_date desc
-select * from ErrorLogs order by errortime desc
-
--- truncate table ProcedureStatistics
-
--- select * from UserRefreshToken
-
--- call USP_UserRefreshToken_Check('77732974-b18f-11ee-9206-e049c9171833', '::1');
+-- clear bomdev database
 SET foreign_key_checks = 0;
 drop table Users
 SET foreign_key_checks = 1;
+truncate table Users;
+truncate table ErrorLogs;
+truncate table OperationLogs;
+truncate table HttpRequestsLogs;
+truncate table UsersOAuths;
+truncate table UserToken;
+truncate table EmailLogs;
 
-select * from Roles
-select * from UsersRoles where userId = 2
-update UsersRoles set roleId=2
-select * from ErrorLogs order by errorID desc
-
-truncate table Users
-truncate table ErrorLogs
-
-select * from Users
-delete from Users where userId=4
-delete from UserToken where userId = 4;
-delete from UsersRoles where userId = 4;
-select * from UsersRoles where userId=3
-
-select * from Roles
-select * from Projects
-update Projects set passwordStrengthRegex='^.{4,}$';
-
-select * from EmailLogs order by emaillogid desc
-
-SELECT * FROM UserToken order by userTokenId desc
-
-insert into UserToken(userID, token, expiredAt, requestIp, processName, enabled, disabledDate, data)
-values(1, 'teste', '2024-06-18 15:39:47', '1', 'OAUTH_LOGIN', 1, null, '1');
-delete from UserToken where userTokenId = 14;
-
-
-select * from ProcedureStatistics order by execution_date desc
-
-
-SHOW ENGINE INNODB STATUS;
-SHOW CREATE TABLE ErrorLogs;
-
-SHOW CREATE TABLE ErrorLogs;
-
-
-update Users set emailConfirmed=1 where userId=2
-select * from UsersRoles 
-
-update UsersRoles set roleId = 1 where userId = 2
-
+-- chamar proc
 call USP_UserToken_Check('e8a4a57a-de58-11ee-8b5b-841af16f5660', null)
-select * from UserToken where token = '694bfac8-4cee-11ef-952a-e97074f57156' order by data desc
- SELECT userID, processName, data 
-    FROM UserToken 
-    WHERE token = 'ca42306e-501c-11ef-956f-ea73833580e2'     
-    AND (null IS NULL OR requestIp = 1)
-    AND enabled = 1
-    AND expiredAt > NOW()    
-    LIMIT 1;
 
-----------
-
-select * from EmailLogs order by emailLogId desc
-
-update Users set emailConfirmed = 1
-
-select * from HttpRequestsLogs  order by createdAt desc
+-- operations logs
 select * from OperationLogs 
 order by operationLogId desc
 
+-- http request
+select * from HttpRequestsLogs  order by createdAt desc
+
+-- error logs
 select * from ErrorLogs order by errorID desc
 
-
+-- oaauth
 select * from UsersOAuths where code = '422d3442-4dae-11ef-97ea-d08e79e09abc'
 
-select distinct processName from UserToken
 
+-- know table size in database
+SELECT 
+    table_name AS `Table`, 
+    ROUND((data_length + index_length) / 1024 / 1024, 2) AS `Size (MB)`
+FROM 
+    information_schema.tables
+WHERE 
+    table_schema = 'Bomdev'
+ORDER BY 
+    `Size (MB)` DESC;
+
+
+-- temporary queries
+
+select * from Users;

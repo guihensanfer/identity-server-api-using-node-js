@@ -11,6 +11,7 @@ const db = require('./db');
 const RolesModel = require('./models/rolesModel');
 const path = require('path');
 const cors = require('cors');
+const encript = require('./services/passwordEncryptService');
 
 const swaggerOptions = {
     definition: {
@@ -120,7 +121,7 @@ app.use('/api/v1/projects', projectsController);
     const UsersRoles = require('./repositories/usersRolesRepository');
     const UsersOAuth = require('./repositories/oAuthRepository');
 
-    await db._sequealize.sync();    
+    await db._sequealize.sync();            
 
     await HttpRequestsLogs.data.findCreateFind({
         where: {
@@ -202,6 +203,34 @@ app.use('/api/v1/projects', projectsController);
             description: RolesModel.ROLE_USER
         }
     });
+
+    const defaultProjectId = 1;
+    const oAuthUserEmail = 'oauth@bomdev.com.br';
+    const oAuthUserPasswd = 'IlHEYonEwYAnTUmNiCaInECoMPTIng';
+    const UserProcs = new Users.Procs('Default');
+
+    const oAuthUserAlreadyExists = await UserProcs.checkUserExists(oAuthUserEmail, defaultProjectId);
+    const oAuthPasswdEncrypt = await encript.encryptPassword(oAuthUserPasswd);
+
+    if(!oAuthUserAlreadyExists){
+        const userId = await Users.createUser({
+            firstName: 'OAuth',
+            lastName: 'Bomdev',
+            email: oAuthUserEmail,
+            password: null,
+            document: '08585787945',
+            documentTypeId: 1,
+            projectId: defaultProjectId,
+            defaultLanguage: 'pt-br',
+            picture: null
+        }, RolesModel.ROLE_ADMINISTRATOR, 'Default');
+        // Reset password and confirmEmail automaticaly for current user
+        await Users.resetPassword(userId, oAuthPasswdEncrypt, 'Default', true);      
+
+        if(userId && userId > 0){
+            console.log('Initial administrators were created')
+        }
+    }
 
     await db.executeProcedure('USP_TEST')
     .then(res => {

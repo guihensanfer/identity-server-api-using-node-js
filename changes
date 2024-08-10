@@ -37,3 +37,5 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
     * do it for all endpoints, maybe we needs an enum to map all possibilities
 
 ** google login we need to update the user too, not only create
+
+* encript operations around the code, become to use the passwordEncryptServe
