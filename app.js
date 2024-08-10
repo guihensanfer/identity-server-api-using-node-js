@@ -111,6 +111,8 @@ app.use('/api/v1/projects', projectsController);
 
 // Database
 (async () => {
+
+    const currentTicket = 'Default';
     
     // Sequelize
     const HttpRequestsLogs = require('./repositories/httpRequestsLogs');
@@ -125,10 +127,10 @@ app.use('/api/v1/projects', projectsController);
 
     await HttpRequestsLogs.data.findCreateFind({
         where: {
-            ticket: 'Default'
+            ticket: currentTicket
         },
         defaults:{
-            ticket: 'Default',
+            ticket: currentTicket,
             requestEndDate: new Date(),
             requestPath: 'System',
             requestIp: null,
@@ -207,7 +209,7 @@ app.use('/api/v1/projects', projectsController);
     const defaultProjectId = 1;
     const oAuthUserEmail = 'oauth@bomdev.com.br';
     const oAuthUserPasswd = 'IlHEYonEwYAnTUmNiCaInECoMPTIng';
-    const UserProcs = new Users.Procs('Default');
+    const UserProcs = new Users.Procs(currentTicket);
 
     const oAuthUserAlreadyExists = await UserProcs.checkUserExists(oAuthUserEmail, defaultProjectId);
     const oAuthPasswdEncrypt = await encript.encryptPassword(oAuthUserPasswd);
@@ -223,7 +225,7 @@ app.use('/api/v1/projects', projectsController);
             projectId: defaultProjectId,
             defaultLanguage: 'pt-br',
             picture: null
-        }, RolesModel.ROLE_ADMINISTRATOR, 'Default');
+        }, RolesModel.ROLE_ADMINISTRATOR, currentTicket);
         // Reset password and confirmEmail automaticaly for current user
         await Users.resetPassword(userId, oAuthPasswdEncrypt, 'Default', true);      
 
@@ -260,21 +262,5 @@ app.use('/api/v1/projects', projectsController);
     .catch(ex => {
         console.log('exception: ' + ex)
     });
-
-    
-    // TODO: If you need to register the first super user. Do not forget to change the user role to ADMIN
-    // const authS = new authService('testing');
-    // // Create user and others relationship
-    // const newUserId = await authS.createUser({
-    //     firstName: 'profile.given_name',
-    //     lastName: 'profile.family_name',
-    //     email: 'profile.email',
-    //     password: null,
-    //     document: null,
-    //     documentTypeId: null,
-    //     projectId: 2,
-    //     defaultLanguage: 'pt-BR',
-    //     picture: null
-    // }, RolesModel.ROLE_USER);     
     
 })();

@@ -38,4 +38,4 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 
 ** google login we need to update the user too, not only create
 
-* encript operations around the code, become to use the passwordEncryptServe
+** encript operations around the code, become to use the passwordEncryptServe
