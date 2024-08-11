@@ -280,6 +280,53 @@ class HTTPResponsePatternModel{
 
         return 'Already exists.';
     }
+
+    static ProcessCodes = Object.freeze({
+      /** Generate other accessToken from this
+       * Read endpoint: /auth/login
+       */
+      REFRESH_TOKEN:'REFRESH_TOKEN',
+
+      /** Provider access to basic user infos.
+       * Writes endpoints: /auth/login
+       * Read endpoint: /oauth/user-info
+       */
+      OAUTH_USER_INFO:'OAUTH_USER_INFO',
+
+      /** Provider private code with context data (projectid, redirectUrl and etc) to first request from external log in provider
+       * Writes endpoints: /login/external/google
+       * Read endpoint: /login/external/google/callback
+       */
+      EXTERNAL_OAUTH_DATA:'EXTERNAL_OAUTH_DATA',
+
+      /**
+       * Provider a public code with the all external log in provider context 
+       * Writes endpoints: /login/external/google
+       * Read endpoint: /login/external/redirect
+       */
+      EXTERNAL_OAUTH_REDIRECT:'EXTERNAL_OAUTH_REDIRECT',
+
+      /**
+       * Provider a private code the send to user email.
+       * Writes endpoints: /forget-password
+       * Read endpoint: /auth/reset-password
+       */
+      FORGET_PASSWORD:'FORGET_PASSWORD',
+
+      /**
+       * Provider a public code to get a new accesstoken
+       * Writes endpoints: /auth/otp
+       * Read endpoint: /auth/login
+       */
+      OTPFor2Step:'OTPFor2Step',
+
+      /**
+       * Provider a public code to reset user password
+       * Writes endpoints: /oauth/user-info 
+       * Read endpoint: /auth/reset-password
+       */
+      RESET_PASSWORD_FROM_USER_INFO:'RESET_PASSWORD_FROM_USER_INFO'      
+    });
 }
 
 

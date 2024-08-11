@@ -671,7 +671,7 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
 
         const authProcs = new Auth.Procs(currentTicket);
 
-        const dataFromCode = await authProcs.userTokenVerifyAll(code);
+        const dataFromCode = await authProcs.userTokenVerifyAll(code, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OAUTH_USER_INFO);
 
         if(_.isNull(dataFromCode) || _.isEmpty(dataFromCode)){
             response.set(401, false);
@@ -685,7 +685,7 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
         }            
         const accessExpiresAt = new Date();
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
-        const codeForResetPassword = await authProcs.userTokenCreate(userId, accessExpiresAt, req.ip, 'RESET_PASSWORD_FROM_USER_INFO');
+        const codeForResetPassword = await authProcs.userTokenCreate(userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.RESET_PASSWORD_FROM_USER_INFO);
         const oAuthProcs = new oAuth.Procs(currentTicket);
         const userInfo = await oAuthProcs.getUserInfo(userId);
 

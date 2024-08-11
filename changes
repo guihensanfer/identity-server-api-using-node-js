@@ -1,3 +1,8 @@
+*** security -> check if the loginWithCode is the refresh or otp token, because can the bad user try to login with a different token
+    * do it for all endpoints, maybe we needs an enum to map all possibilities
+
+*** google callback today that is return the refreshtoken, change to return userinfotoken
+
 continuar: I was development at oAuthController, I need to create an endpoint to set an application role to userId. 
 Important: Like as Google oauth2, I think to create two endpoints in the OAuth tag.
 - user-assign-application-role (current)
@@ -32,9 +37,6 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 * login without password (login with email and code numbers)
 
 * improve the refreshtoken process login with a 'count' sequence to turn it more hard to intercept by hackers access
-
-*** security -> check if the loginWithCode is the refresh or otp token, because can the bad user try to login with a different token
-    * do it for all endpoints, maybe we needs an enum to map all possibilities
 
 ** google login we need to update the user too, not only create
 

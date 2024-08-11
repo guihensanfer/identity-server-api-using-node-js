@@ -376,8 +376,9 @@ router.post('/login', async (req, res) => {
             let resultUserId = 0;
 
             
-            const codeDataOTP = await authProcs.userTokenVerifyAll(continueWithCode, req.ip, 'OTPFor2Step');
-            const codeDataRefreshToken = await authProcs.userTokenVerifyAll(continueWithCode, req.ip, 'REFRESH_TOKEN');
+            const codeDataOTP = await authProcs.userTokenVerifyAll(continueWithCode, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OTPFor2Step);
+            const codeDataRefreshToken = await authProcs.userTokenVerifyAll(continueWithCode, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.REFRESH_TOKEN);
+            
 
             // Log in using OTP
             if(codeDataOTP){
@@ -520,9 +521,9 @@ router.post('/login', async (req, res) => {
         refreshExpiresAt.setMinutes(refreshExpiresAt.getMinutes() + parseInt(process.env.JWT_REFRESH_EXPIRATION));
 
         // For refresh log in, without request news with the confidential infos
-        const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip, 'REFRESH_TOKEN');
+        const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.REFRESH_TOKEN);
         // Used on OAuth callback context, so that the client app can see the user info to show into their app.
-        const codeForUserInfo = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OAUTH_USER_INFO', user.userId);
+        const codeForUserInfo = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OAUTH_USER_INFO, user.userId);
 
         const result = {
             accessToken: token,
@@ -592,7 +593,7 @@ router.get('/login/external/redirect', async (req, res) => {
         }                                  
         
         // Check token
-        const tokenRedirect = await authProcs.userTokenVerifyAll(codeForRedirect);
+        const tokenRedirect = await authProcs.userTokenVerifyAll(codeForRedirect, null, httpP.HTTPResponsePatternModel.ProcessCodes.EXTERNAL_OAUTH_REDIRECT);
         
         if(!tokenRedirect || tokenRedirect.result <= 0 || !tokenRedirect.data || _.isNull(tokenRedirect.data) || _.isEmpty(tokenRedirect.data)){
             response.set(401, false);
@@ -737,10 +738,10 @@ router.get('/login/external/google', httpP.HTTPResponsePatternModel.authWithAdmi
             originRequestIp: req.ip, // Used to improve secure on the final callback redirect (prevent http intercepts token parameter)
             provider: 'Google'
         };
-        const tokenForData = await authProcs.userTokenCreate(req.user.id, dataTokenExpiresAt, null, 'EXTERNAL_OAUTH_DATA', JSON.stringify(ourParamData));        
+        const tokenForData = await authProcs.userTokenCreate(req.user.id, dataTokenExpiresAt, null, httpP.HTTPResponsePatternModel.ProcessCodes.EXTERNAL_OAUTH_DATA, JSON.stringify(ourParamData));        
         const clientId = process.env.GOOGLE_CLIENT_ID;  
         const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${googleAuthRedirectUrl}&response_type=code&scope=profile email&state=${encodeURIComponent(tokenForData)}`;
-        const tokenForRedirect = await authProcs.userTokenCreate(req.user.id, redirectTokenExpiresAt,null, 'EXTERNAL_OAUTH_REDIRECT', url);
+        const tokenForRedirect = await authProcs.userTokenCreate(req.user.id, redirectTokenExpiresAt,null, httpP.HTTPResponsePatternModel.ProcessCodes.EXTERNAL_OAUTH_REDIRECT, url);
 
         const result = {
             codeForRedirect: tokenForRedirect,
@@ -778,14 +779,14 @@ router.get('/login/external/google/callback', async (req, res) => {
         grant_type: 'authorization_code',
       });
   
-      const { access_token, id_token } = data;
+      const { access_token } = data;
   
       // Use access_token or id_token to fetch user profile
       const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
         headers: { Authorization: `Bearer ${access_token}` },
       });
   
-      const jsonFromInitialRequest = await authProcs.userTokenVerifyAll(state);      
+      const jsonFromInitialRequest = await authProcs.userTokenVerifyAll(state, null, httpP.HTTPResponsePatternModel.ProcessCodes.EXTERNAL_OAUTH_DATA);      
 
       if(jsonFromInitialRequest && !_.isNull(jsonFromInitialRequest.data) && !_.isEmpty(jsonFromInitialRequest.data)){
         const obj = util.convertToJSON(jsonFromInitialRequest.data);
@@ -853,8 +854,8 @@ router.get('/login/external/google/callback', async (req, res) => {
                 const tokenFirstLogin = await authProcs.userTokenCreate(
                     user.userId, 
                     expiresAt, 
-                    process.env.EXTERNAL_OATH_USE_SAME_ORIGIN_IP === 'false' ? null : obj.originRequestIp, // Production use the request ip to improve security
-                    'REFRESH_TOKEN'
+                    null,
+                    httpP.HTTPResponsePatternModel.ProcessCodes.REFRESH_TOKEN
                 );
 
                 if(!tokenFirstLogin){
@@ -964,7 +965,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
         const accessExpiresAt = new Date();        
 
         accessExpiresAt.setMinutes(accessExpiresAt.getMinutes() + parseInt(process.env.JWT_ACCESS_EXPIRATION));        
-        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'FORGET_PASSWORD');
+        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.FORGET_PASSWORD);
         
         if(!token){
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
@@ -1107,7 +1108,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
     
         // Check token
         // If you want to active the forget-password endpoint, you need to add a new userToken verify validation using the forgetPassword processName code
-        const _userID = await authProcs.userTokenVerify(code, req.ip, 'RESET_PASSWORD_FROM_USER_INFO');
+        const _userID = await authProcs.userTokenVerify(code, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.RESET_PASSWORD_FROM_USER_INFO);
 
         if(!_userID || _userID <= 0){
             response.set(401, false);
@@ -1284,7 +1285,7 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
             verificationCode: verificationCode,
             resetUserPassword: resetUserPassword ?? false
         };
-        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, 'OTPFor2Step', JSON.stringify(data));
+        const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OTPFor2Step, JSON.stringify(data));
         
         if(!token){
             throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
