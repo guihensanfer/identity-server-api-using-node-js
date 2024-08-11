@@ -213,7 +213,7 @@ app.use('/api/v1/projects', projectsController);
 
     const oAuthUserAlreadyExists = await UserProcs.checkUserExists(oAuthUserEmail, defaultProjectId);
     const oAuthPasswdEncrypt = await encript.encryptPassword(oAuthUserPasswd);
-
+    
     if(!oAuthUserAlreadyExists){
         const userId = await Users.createUser({
             firstName: 'OAuth',
@@ -228,9 +228,10 @@ app.use('/api/v1/projects', projectsController);
         }, RolesModel.ROLE_ADMINISTRATOR, currentTicket);
         // Reset password and confirmEmail automaticaly for current user
         await Users.resetPassword(userId, oAuthPasswdEncrypt, 'Default', true);      
+        await UsersOAuth.createUserCallback(userId, 'https://rep.bomdev.com.br/oauth', currentTicket);    
 
         if(userId && userId > 0){
-            console.log('Initial administrators were created')
+            console.log('Initial administrators were created')            
         }
     }
 

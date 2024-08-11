@@ -20,7 +20,7 @@ const data = db._sequealize.define('UsersOAuths', {
             key: 'userId'
         }        
     },
-    clientCallbackUri:{
+    clientCallbackUrl:{
         type: Sequelize.STRING(MAX_CALLBACKURI_LENGTH),
         allowNull:false
     },

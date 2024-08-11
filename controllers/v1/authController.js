@@ -851,18 +851,19 @@ router.get('/login/external/google/callback', async (req, res) => {
 
                 expiresAt.setMinutes(expiresAt.getMinutes() + 3);
                 
-                const tokenFirstLogin = await authProcs.userTokenCreate(
+                const userInfoCode = await authProcs.userTokenCreate(
                     user.userId, 
                     expiresAt, 
                     null,
-                    httpP.HTTPResponsePatternModel.ProcessCodes.REFRESH_TOKEN
+                    httpP.HTTPResponsePatternModel.ProcessCodes.OAUTH_USER_INFO,
+                    user.userId
                 );
 
-                if(!tokenFirstLogin){
-                    throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('Token for first login'));
+                if(!userInfoCode){
+                    throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('User info code'));
                 }
 
-                redirectUrl += `?token=${tokenFirstLogin}`;
+                redirectUrl += `?userInfoCode=${userInfoCode}`;
 
                 res.redirect(redirectUrl);
             }

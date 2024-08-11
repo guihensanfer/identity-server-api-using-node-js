@@ -195,7 +195,7 @@ BEGIN
     FROM UserToken 
     WHERE token = p_token     
     AND (p_processName is null OR processName = p_processName)
-    AND (p_requestIP IS NULL OR requestIp = p_requestIP)
+    AND (p_requestIP IS NULL OR requestIp IS NULL OR requestIp = p_requestIP)
     AND enabled = 1
     AND expiredAt > NOW()    
     LIMIT 1;
@@ -325,7 +325,7 @@ select * from HttpRequestsLogs  order by createdAt desc
 select * from ErrorLogs order by errorID desc
 
 -- oaauth
-select * from UsersOAuths where code = '422d3442-4dae-11ef-97ea-d08e79e09abc'
+select * from UsersOAuths
 
 
 -- know table size in database
@@ -343,3 +343,4 @@ ORDER BY
 -- temporary queries
 
 select * from Users;
+select * from UserToken where token = 'dbf41049-5771-11ef-957d-ea748642b6cc'
