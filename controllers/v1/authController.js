@@ -333,10 +333,10 @@ router.post('/login', async (req, res) => {
         if(_.isNull(continueWithCode) || _.isEmpty(continueWithCode)){
              // Email
             if(_.isNull(email) || _.isEmpty(email)){
-                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('email'));            
             }
             else if(email.length > Auth.MAX_EMAIL_LENGTH){
-                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('email'));               
             }
             else if(!util.isValidEmail(email)){
                 errors.push('Valid email is required.');
@@ -344,15 +344,15 @@ router.post('/login', async (req, res) => {
 
             // Password
             if(_.isNull(password) || _.isEmpty(password)){
-                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Password'));
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('password'));
             }
             else if(password.length > Auth.MAX_PASSWORD_LENGTH){
-                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Password'));
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('password'));
             }  
 
             // ProjectId
             if(!projectId){
-                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));
             }
             else{
                 let project = await Projects.data.findOne({
@@ -583,7 +583,7 @@ router.get('/login/external/redirect', async (req, res) => {
         
         // token
         if(_.isNull(codeForRedirect) || _.isEmpty(codeForRedirect)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('token'));
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('codeForRedirect'));
         }
 
         // ----- Check for errors
@@ -831,7 +831,8 @@ router.get('/login/external/google/callback', async (req, res) => {
                         documentTypeId: null,
                         projectId: projectId,
                         defaultLanguage: profile.locale?.trim(),
-                        picture: profile.picture
+                        picture: profile.picture,
+                        emailConfirmed: profile.verified_email
                     }, RolesModel.ROLE_USER, currentTicket);                    
 
                     user = await Auth.data.findOne({                
@@ -907,10 +908,10 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
         
          // Email
          if(_.isNull(email) || _.isEmpty(email)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('email'));            
         }
         else if(email.length > Auth.MAX_EMAIL_LENGTH){
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('email'));               
         }
         else if(!util.isValidEmail(email)){
             errors.push('Valid email is required.');
@@ -919,7 +920,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
         // ProjectId
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
         if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));
         }
         else{
             let project = await Projects.data.findOne({
@@ -929,7 +930,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }
         }
 
@@ -969,7 +970,7 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
         const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.FORGET_PASSWORD);
         
         if(!token){
-            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
+            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('forgetPasswordCode'));
         }
         const queryParams = {
             token: token,
@@ -1231,10 +1232,10 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
         
          // Email
          if(_.isNull(email) || _.isEmpty(email)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('Email'));            
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('email'));            
         }
         else if(email.length > Auth.MAX_EMAIL_LENGTH){
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('Email'));               
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('email'));               
         }
         else if(!util.isValidEmail(email)){
             errors.push('Valid email is required.');
@@ -1243,7 +1244,7 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
         // ProjectId
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, projectId);
         if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));
         }
         else{
             let project = await Projects.data.findOne({
@@ -1253,7 +1254,7 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }
         }  
 
@@ -1289,7 +1290,7 @@ router.post('/otp', httpP.HTTPResponsePatternModel.authWithAdminGroup(), async (
         const token = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OTPFor2Step, JSON.stringify(data));
         
         if(!token){
-            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('token'));
+            throw new Error(httpP.HTTPResponsePatternModel.cannotBeCreatedMsg('OtpCode'));
         }
 
         const mailOptions = {

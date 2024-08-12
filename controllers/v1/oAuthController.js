@@ -88,7 +88,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
         
 
         if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));                 
         }
         else{
             let project = await Projects.data.findOne({
@@ -98,7 +98,7 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }            
         }
         
@@ -198,7 +198,7 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
 
         if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));                 
         }
         else{
             let project = await Projects.data.findOne({
@@ -208,7 +208,7 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }            
         }
 
@@ -366,7 +366,7 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
 
         if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));                 
         }
         else{
             let project = await Projects.data.findOne({
@@ -376,7 +376,7 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }            
         }
 
@@ -489,7 +489,7 @@ router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }            
         }        
         
@@ -644,7 +644,7 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
         projectId = httpP.HTTPResponsePatternModel.verifyProjectIdOrDefault(req, null);
 
         if(!projectId){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('ProjectId'));                 
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('projectId'));                 
         }
         else{
             let project = await Projects.data.findOne({
@@ -654,7 +654,7 @@ router.get('/user-info', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
             });
 
             if(!project){
-                errors.push('ProjectId is invalid.');
+                errors.push('projectId is invalid.');
             }            
         }
 
