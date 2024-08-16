@@ -5,7 +5,9 @@
 ** generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
 
 ** google login we need to update the user too, not only create
-** add description statusCode to body and 429 too many requests
+
+*** TOO MANY WRONG LOGGINS DISABLED CURRENT USER
+
 
 
 _________________________
@@ -28,3 +30,4 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 * OK DONE login without password (login with email and code numbers)
 *** OK DONE security: implement validation to count wrong tried log in to prevent robots requests.
 *** OKDONE encript operations around the code, become to use the passwordEncryptServe
+** OKDONE add description statusCode to body and 429 too many requests
