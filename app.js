@@ -12,6 +12,7 @@ const RolesModel = require('./models/rolesModel');
 const path = require('path');
 const cors = require('cors');
 const encript = require('./services/passwordEncryptService');
+const rateLimit = require('express-rate-limit');
 
 const swaggerOptions = {
     definition: {
@@ -91,6 +92,16 @@ app.use(cors({
     methods: 'GET, POST, PUT, DELETE', // Métodos permitidos
     credentials: true // Se necessário, para permitir cookies e autenticação
 }));
+
+// Define the rate limit
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 15, // Limit each IP to 100 requests per `window`
+    message: "Too many requests from this IP, please try again later."
+  });
+  
+// Apply the rate limiter to all requests
+app.use(limiter);
 
 
 app.use(express.json());

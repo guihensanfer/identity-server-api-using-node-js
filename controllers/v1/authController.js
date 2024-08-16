@@ -16,6 +16,7 @@ const jwt = require('jsonwebtoken');
 const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
+const passwordEncryptService = require('../../services/passwordEncryptService');
 const googleAuthRedirectUrl = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
@@ -82,6 +83,8 @@ const googleAuthRedirectUrl = process.env.APP_HOST + 'api/v1/auth/login/external
  *         description: Bad request, verify your request data.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -92,7 +95,6 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
     var { firstName, lastName, document, email, password, projectId, defaultLanguage, picture } = req.body;        
     let errors = [];  
     const authProcs = new Auth.Procs(currentTicket);
-    const rolesProcs = new Roles.Procs(currentTicket);
 
     try
     {
@@ -191,9 +193,8 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
         }
     
     
-        // Create password
-        let salt = await bcrypt.genSaltSync(12);
-        let passwordHash = await bcrypt.hashSync(password, salt);
+        // Create password        
+        const passwordHash = await passwordEncryptService.encryptPassword(password);
 
         // Create user and all anothers relationships
         await Auth.createUser({
@@ -261,6 +262,9 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  *             schema:
  *               type: object
  *               properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   description: Response status code
  *                 ticket:
  *                   type: string
  *                   description: The ticket of the request
@@ -308,6 +312,8 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  *         description: User not found.
  *       '401':
  *         description: Log in unauthorized.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -567,6 +573,8 @@ router.post('/login', async (req, res) => {
  *         description: Unprocessable entity, the provided data is not valid. 
  *       '401':
  *         description: Log in unauthorized.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -631,6 +639,9 @@ router.get('/login/external/redirect', async (req, res) => {
  *             schema:
  *               type: object
  *               properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   description: Response status code
  *                 ticket:
  *                   type: string
  *                   description: The ticket of the request
@@ -661,6 +672,8 @@ router.get('/login/external/redirect', async (req, res) => {
  *         description: Unprocessable entity, the provided data is not valid. 
  *       '401':
  *         description: Log in unauthorized.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -1044,6 +1057,9 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
  *             schema:
  *               type: object
  *               properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   description: Response status code
  *                 ticket:
  *                   type: string
  *                   description: The ticket of the request
@@ -1067,6 +1083,8 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
  *         description: Unprocessable entity, the provided data is not valid.
  *       '401':
  *         description: Log in unauthorized.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -1118,8 +1136,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }         
 
         // Create password
-        let salt = await bcrypt.genSaltSync(12);
-        let passwordHash = await bcrypt.hashSync(newPassword, salt);
+        const passwordHash = await passwordEncryptService.encryptPassword(password);
 
         // Update the password
         await Auth.resetPassword(_userID, passwordHash, currentTicket);
@@ -1156,6 +1173,9 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *           schema:
  *             type: object
  *             properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   description: Response status code
  *               email:
  *                 type: string
  *                 format: email
@@ -1208,6 +1228,8 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *         description: User not found.
  *       '401':
  *         description: Log in unauthorized.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */

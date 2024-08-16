@@ -25,6 +25,9 @@ const util = require('../../services/utilService');
  *           schema:
  *             type: object
  *             properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   description: Response status code
  *               email:
  *                 type: string
  *                 maxLength: 200
@@ -51,6 +54,8 @@ const util = require('../../services/utilService');
  *         description: User not exists.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -169,6 +174,8 @@ router.post('/user-check-email-exists', httpP.HTTPResponsePatternModel.authWithA
  *         description: Log in unauthorized.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -266,6 +273,9 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *             schema:
  *               type: object
  *               properties:
+ *                 statusCode:
+ *                   type: integer
+ *                   description: Response status code
  *                 message:
  *                   type: string
  *                   example: Get data was successful.
@@ -351,6 +361,8 @@ router.put('/set-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *                   example: null
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -458,6 +470,8 @@ router.get('/get-context', httpP.HTTPResponsePatternModel.authWithAdminGroup(), 
  *         description: User not found.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */
@@ -627,6 +641,8 @@ router.put('/user-assign-application-role', httpP.HTTPResponsePatternModel.authW
  *         description: Log in unauthorized.
  *       '422':
  *         description: Unprocessable entity, the provided data is not valid.
+ *       '429':
+ *         description: Too many requests from this IP, please try again later.
  *       '500':
  *         description: Internal Server Error.
  */

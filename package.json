@@ -17,6 +17,7 @@
     "cpf-cnpj-validator": "^1.0.3",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.6.5",
     "nodemailer": "^6.9.8",
