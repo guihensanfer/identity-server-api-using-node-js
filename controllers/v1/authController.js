@@ -9,7 +9,6 @@ const RolesModel = require('../../models/rolesModel');
 const Projects = require('../../repositories/projectsRepository');
 const UsersRoles = require('../../repositories/usersRolesRepository');
 const Roles = require('../../repositories/rolesRepository');
-const bcrypt = require('bcrypt');
 const db = require('../../db');
 const ErrorLogModel = require('../../models/errorLogModel');
 const jwt = require('jsonwebtoken');
@@ -17,6 +16,7 @@ const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
 const passwordEncryptService = require('../../services/passwordEncryptService');
+const { where } = require('sequelize');
 const googleAuthRedirectUrl = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
@@ -423,9 +423,7 @@ router.post('/login', async (req, res) => {
                 response.set(401, false);
                 return await response.sendResponse();
             }
-            
-            
-
+                        
             
             const userID = resultUserId;
 
@@ -478,17 +476,33 @@ router.post('/login', async (req, res) => {
             return await response.sendResponse();
         }
         else if(!user.enabled){
-            response.set(401, false, null, null, "The account is locked out.");
+            response.set(401, false, null, null, "The account is disabled, use the otp endpoint.");
             return await response.sendResponse();
         }
         else if(!user.emailConfirmed){
-            response.set(401, false, null, null, "Email is not confirmed.");
+            response.set(401, false, null, null, "Email is not confirmed, use the otp endpoint.");
             return await response.sendResponse();
         }
-        else if(byPassword) {
-            let checkPassword = await bcrypt.compare(password, user.password);
+        else if(byPassword) {            
+            const checkPassword = await passwordEncryptService.comparePassword(password, user.password);
             if(!checkPassword){
-                response.set(401, false);
+                if(user.wrongLoginAttemptCount > env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
+                    await Auth.update(
+                        {
+                            enabled: false
+                        },
+                        {
+                            where:{
+                                userId: user.userId
+                            }
+                        }                    
+                    );
+
+                    response.set(401, false, null, "Invalid user password. User was disabled.");
+                    return await response.sendResponse();
+                }
+
+                response.set(401, false, null, "Invalid user password.");
                 return await response.sendResponse();
             }            
         }

@@ -72,6 +72,14 @@ const data = db._sequealize.define('Users', {
   picture: {
     type: Sequelize.STRING(MAX_PICTURE_LENGTH),
     allowNull: true,
+  },
+  lastLoginAttemptDate: {
+    type: Sequelize.DATE,
+    allowNull: true,
+  },
+  wrongLoginAttemptCount: {
+    type: Sequelize.SMALLINT,
+    allowNull: true,
   }
 }, {
   indexes: [
