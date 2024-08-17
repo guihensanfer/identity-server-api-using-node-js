@@ -486,7 +486,7 @@ router.post('/login', async (req, res) => {
         else if(byPassword) {            
             const checkPassword = await passwordEncryptService.comparePassword(password, user.password);
             if(!checkPassword){
-                if(user.wrongLoginAttemptCount > env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
+                if(user.wrongLoginAttemptCount && user.wrongLoginAttemptCount > env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
                     await Auth.update(
                         {
                             enabled: false
@@ -501,6 +501,17 @@ router.post('/login', async (req, res) => {
                     response.set(401, false, null, "Invalid user password. User was disabled.");
                     return await response.sendResponse();
                 }
+
+                await Auth.update(
+                    {
+                        wrongLoginAttemptCount: user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount + 1 : 1
+                    },
+                    {
+                        where:{
+                            userId: user.userId
+                        }
+                    }                    
+                );
 
                 response.set(401, false, null, "Invalid user password.");
                 return await response.sendResponse();
