@@ -485,33 +485,20 @@ router.post('/login', async (req, res) => {
         }
         else if(byPassword) {            
             const checkPassword = await passwordEncryptService.comparePassword(password, user.password);
+            
             if(!checkPassword){
+                const countWrongAttemptsLogins =  user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount : 1;
+
                 if(user.wrongLoginAttemptCount && user.wrongLoginAttemptCount > env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
-                    await Auth.update(
-                        {
-                            enabled: false
-                        },
-                        {
-                            where:{
-                                userId: user.userId
-                            }
-                        }                    
-                    );
+                    // Disable the current user because too many wrong attempts logins
+                    await Auth.setUserLoginTooManyWrongAttempts(user.userId, true, countWrongAttemptsLogins, currentTicket);
 
                     response.set(401, false, null, "Invalid user password. User was disabled.");
                     return await response.sendResponse();
                 }
 
-                await Auth.update(
-                    {
-                        wrongLoginAttemptCount: user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount + 1 : 1
-                    },
-                    {
-                        where:{
-                            userId: user.userId
-                        }
-                    }                    
-                );
+                // Set new wrong attempt log in, without disabled user yet.
+                await Auth.setUserLoginTooManyWrongAttempts(user.userId, false, countWrongAttemptsLogins, currentTicket);
 
                 response.set(401, false, null, "Invalid user password.");
                 return await response.sendResponse();
@@ -564,6 +551,13 @@ router.post('/login', async (req, res) => {
             refreshToken: refresh,
             refreshExpiredAt: refreshExpiresAt
         };
+
+        // Update the last user sucessfully login
+        await Auth.setUserLoginSuccessfully(
+            user.userId, 
+            byPassword ? 'byPassword' : 'other',
+            currentTicket
+        );
 
         response.set(200, true, null, result);
         return await response.sendResponse();
@@ -870,7 +864,7 @@ router.get('/login/external/google/callback', async (req, res) => {
                         projectId: projectId,
                         defaultLanguage: profile.locale?.trim(),
                         picture: profile.picture,
-                        emailConfirmed: profile.verified_email
+                        emailConfirmed: false // always false, because the current user does has a password yet
                     }, RolesModel.ROLE_USER, currentTicket);                    
 
                     user = await Auth.data.findOne({                

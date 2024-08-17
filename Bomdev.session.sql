@@ -346,4 +346,4 @@ ORDER BY
 -- temporary queries
 
 select * from Users;
-select * from UserToken where token = 'dbf41049-5771-11ef-957d-ea748642b6cc'
+update Users set emailConfirmed=1;

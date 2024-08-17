@@ -95,6 +95,88 @@ const data = db._sequealize.define('Users', {
 });
 
 // Checkpoint method
+async function setUserLoginSuccessfully(userId, method, ticket) {  
+  const transaction = await data.sequelize.transaction();
+  const operationLog = new db.OperationLogs("USER_LOGIN_SUCCESSFULLY_METHOD", "userId:" + userId.toString() + "|method:" + method, ticket, true);
+  let successfully = true; 
+
+  try {    
+    await Auth.update(
+      {
+        lastLoginAttemptDate: new Date().getDate(),
+        wrongLoginAttemptCount:0
+      },
+      {
+        where:{
+            userId: user.userId
+        }
+      },
+      transaction
+    );
+
+    // Confirmar a transação
+    await transaction.commit();    
+    
+  } catch (error) {
+    successfully = false;
+    await transaction.rollback();
+    throw error;
+  }
+  finally{
+    // create a checkpoint log
+    await operationLog.commit(successfully);
+  }
+}
+
+async function setUserLoginTooManyWrongAttempts(userId, setInvalidUser, currentWrongAttemptsCount, ticket) {  
+  const transaction = await data.sequelize.transaction();
+  const currentTentative = currentWrongAttemptsCount + 1;
+  const operationLog = new db.OperationLogs("USER_LOGIN_WRONG_PASSWORD_ATTEMPTS_METHOD", "userId:" + userId.toString() + "|Current tentative:" + currentTentative.toString() + "|Is turn disabled user:" + setInvalidUser.toString(), ticket, true);
+  let successfully = true; 
+
+  try {    
+    if(setInvalidUser){
+      await Auth.update(
+        {
+          enabled: false
+        },
+        {
+          where:{
+            userId: user.userId
+          }
+        },
+        transaction
+      );
+    }   
+    else
+    {
+      await Auth.update(
+        {
+          wrongLoginAttemptCount: currentTentative
+        },
+        {
+          where:{
+            userId: user.userId
+          }
+        },
+        transaction
+      );
+    } 
+
+    // Confirmar a transação
+    await transaction.commit();    
+    
+  } catch (error) {
+    successfully = false;
+    await transaction.rollback();
+    throw error;
+  }
+  finally{
+    // create a checkpoint log
+    await operationLog.commit(successfully);
+  }
+}
+
 async function resetPassword(userId, newPasswordHash, ticket, confirmEmailUser = true) {  
   const transaction = await data.sequelize.transaction();
   const operationLog = new db.OperationLogs("RESET_USER_PASSWORD_METHOD", "userId:" + userId.toString(), ticket, true);
