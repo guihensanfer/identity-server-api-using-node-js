@@ -138,7 +138,7 @@ async function setUserLoginTooManyWrongAttempts(userId, setInvalidUser, currentW
     if(setInvalidUser){
       await data.update(
         {
-          enabled: false
+          emailConfirmed: false
         },
         {
           where:{

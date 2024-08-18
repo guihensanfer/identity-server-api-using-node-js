@@ -475,10 +475,11 @@ router.post('/login', async (req, res) => {
             return await response.sendResponse();
         }
         else if(!user.enabled){
-            response.set(401, false, ["The account is disabled"], null, "The account is disabled, use the login from two steps authentication.");
+            response.set(401, false, ["The account is disabled"], null, "The account is disabled.");
             return await response.sendResponse();
         }
-        else if(!user.emailConfirmed){
+        // Check for email confirmed only for login using password method
+        else if(!user.emailConfirmed && byPassword){
             response.set(401, false, ["Email is not confirmed"], null, "Email is not confirmed, use the log in from two steps authentication.");
             return await response.sendResponse();
         }
@@ -1166,7 +1167,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
         }         
 
         // Create password
-        const passwordHash = await passwordEncryptService.encryptPassword(password);
+        const passwordHash = await passwordEncryptService.encryptPassword(newPassword);
 
         // Update the password
         await Auth.resetPassword(_userID, passwordHash, currentTicket);

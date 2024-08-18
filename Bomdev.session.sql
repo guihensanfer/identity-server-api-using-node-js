@@ -346,4 +346,4 @@ ORDER BY
 -- temporary queries
 
 select * from Users;
-update Users set emailConfirmed=1, enabled=1;
+update Users set emailConfirmed=0, enabled=1 where userId = 2;
