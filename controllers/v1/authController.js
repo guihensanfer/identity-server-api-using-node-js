@@ -493,7 +493,7 @@ router.post('/login', async (req, res) => {
                     // Disable the current user because too many wrong attempts logins
                     await Auth.setUserLoginTooManyWrongAttempts(user.userId, true, countWrongAttemptsLogins, currentTicket);
 
-                    response.set(401, false, ["Invalid user password again. User was disabled."], null, 'Invalid user password again. User was disabled.');
+                    response.set(401, false, ["Invalid password. The user has been disabled due to too many failed attempts."], null, 'Invalid password. The user has been disabled due to too many failed attempts');
                     return await response.sendResponse();
                 }
 
