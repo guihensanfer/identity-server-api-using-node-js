@@ -1,10 +1,6 @@
-* Create a new attribute in the return API, showing the something like as "userMessage". So that, this is distinct with the current "message" because it is so tecnical info about the HTTP result.
+* generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
 
-** generate fixed in code random code for each badrequest return
 
-** generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
-
-** google login we need to update the user too, not only create
 
 
 
@@ -32,3 +28,4 @@ For exemple: GET query name today -> token, correctily -> refreshToken (like the
 *** OKDONE encript operations around the code, become to use the passwordEncryptServe
 ** OKDONE add description statusCode to body and 429 too many requests
 *** OKDONE TOO MANY WRONG LOGGINS DISABLED CURRENT USER
+** OKDONE google login we need to update the user too, not only create
