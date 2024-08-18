@@ -293,7 +293,7 @@ END;
 
 ALTER TABLE UsersOAuths CHANGE clientCallbackUri clientCallbackUrl varchar(300);
 ALTER TABLE Projects ADD if not exists passwordStrengthRegex varchar(200) null;
-ALTER TABLE Users ADD if not exists lastLoginSuccessfullyDate date null;
+ALTER TABLE Users ADD if not exists lastLoginSuccessfullyDate datetime null;
 ALTER TABLE Users ADD if not exists wrongLoginAttemptCount smallint null;
 
 
