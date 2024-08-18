@@ -487,7 +487,7 @@ router.post('/login', async (req, res) => {
             const checkPassword = await passwordEncryptService.comparePassword(password, user.password);
             
             if(!checkPassword){
-                const countWrongAttemptsLogins =  user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount : 0;
+                const countWrongAttemptsLogins =  user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount : 1;
 
                 if(countWrongAttemptsLogins >= process.env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
                     // Disable the current user because too many wrong attempts logins
