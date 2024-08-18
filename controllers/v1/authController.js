@@ -16,7 +16,6 @@ const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
 const passwordEncryptService = require('../../services/passwordEncryptService');
-const { where } = require('sequelize');
 const googleAuthRedirectUrl = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
@@ -878,6 +877,18 @@ router.get('/login/external/google/callback', async (req, res) => {
                         throw new Error('User has been created, but cannot be found');
                     }
                 }
+
+                // Update the user data
+                await Auth.updateUser(
+                    user.userId,
+                    {
+                        firstName: profile.given_name,
+                        lastName: profile.family_name,                    
+                        defaultLanguage: profile.locale?.trim(),                    
+                        picture: profile.picture
+                    }, 
+                    currentTicket
+                ); 
 
                 // Create a refresh token for first login
                 const expiresAt = new Date();                        

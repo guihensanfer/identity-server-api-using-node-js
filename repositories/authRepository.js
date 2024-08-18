@@ -273,6 +273,37 @@ async function createUser(userData, userRoleName, ticket) {
   }
 }
 
+async function updateUser(userId, userData, ticket) {  
+  const transaction = await data.sequelize.transaction();
+  const operationLog = new db.OperationLogs("UPDATE_USER_METHOD", null, ticket, true);
+  let successfully = true; 
+
+  try {    
+
+    await data.update(
+      userData, 
+      {
+        where:{
+          userId: userId
+        }
+      },
+      transaction
+    );
+
+    await transaction.commit();    
+
+    return userId;
+  } catch (error) {
+    successfully = false;
+    await transaction.rollback();
+    throw error;
+  }
+  finally{
+    // create a checkpoint log
+    await operationLog.commit(successfully);
+  }
+}
+
 
 class Procs extends idb{
   constructor(ticket){
@@ -322,6 +353,7 @@ module.exports = {
   createUser,
   setUserLoginTooManyWrongAttempts,
   setUserLoginSuccessfully,
+  updateUser,
   data,
   Procs,
   MAX_FIRSTNAME_LENGTH,
