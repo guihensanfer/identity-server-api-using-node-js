@@ -73,7 +73,7 @@ const data = db._sequealize.define('Users', {
     type: Sequelize.STRING(MAX_PICTURE_LENGTH),
     allowNull: true,
   },
-  lastLoginAttemptDate: {
+  lastLoginSuccessfullyDate: {
     type: Sequelize.DATE,
     allowNull: true,
   },
@@ -103,7 +103,7 @@ async function setUserLoginSuccessfully(userId, method, ticket) {
   try {    
     await data.update(
       {
-        lastLoginAttemptDate: new Date().getDate(),
+        lastLoginSuccessfullyDate: new Date(),
         wrongLoginAttemptCount:0
       },
       {

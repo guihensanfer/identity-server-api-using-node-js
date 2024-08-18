@@ -476,11 +476,11 @@ router.post('/login', async (req, res) => {
             return await response.sendResponse();
         }
         else if(!user.enabled){
-            response.set(401, false, null, null, "The account is disabled, use the login from two steps authentication.");
+            response.set(401, false, ["The account is disabled"], null, "The account is disabled, use the login from two steps authentication.");
             return await response.sendResponse();
         }
         else if(!user.emailConfirmed){
-            response.set(401, false, null, null, "Email is not confirmed, use the login from two steps authentication.");
+            response.set(401, false, ["Email is not confirmed"], null, "Email is not confirmed, use the log in from two steps authentication.");
             return await response.sendResponse();
         }
         else if(byPassword) {            
@@ -493,7 +493,7 @@ router.post('/login', async (req, res) => {
                     // Disable the current user because too many wrong attempts logins
                     await Auth.setUserLoginTooManyWrongAttempts(user.userId, true, countWrongAttemptsLogins, currentTicket);
 
-                    response.set(401, false, null, "Invalid user password. User was disabled.");
+                    response.set(401, false, ["Invalid user password again. User was disabled."], null, 'Invalid user password again. User was disabled.');
                     return await response.sendResponse();
                 }
 
