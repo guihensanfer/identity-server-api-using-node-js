@@ -12,6 +12,9 @@ class Cryptography {
     }
     
     async comparePassword(password, hash) {
+        if(!hash)
+            return false;
+
         const match = await bcrypt.compareSync(password, hash);
         return match;
     }

@@ -476,20 +476,20 @@ router.post('/login', async (req, res) => {
             return await response.sendResponse();
         }
         else if(!user.enabled){
-            response.set(401, false, null, null, "The account is disabled, use the otp endpoint.");
+            response.set(401, false, null, null, "The account is disabled, use the login from two steps authentication.");
             return await response.sendResponse();
         }
         else if(!user.emailConfirmed){
-            response.set(401, false, null, null, "Email is not confirmed, use the otp endpoint.");
+            response.set(401, false, null, null, "Email is not confirmed, use the login from two steps authentication.");
             return await response.sendResponse();
         }
         else if(byPassword) {            
             const checkPassword = await passwordEncryptService.comparePassword(password, user.password);
             
             if(!checkPassword){
-                const countWrongAttemptsLogins =  user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount : 1;
+                const countWrongAttemptsLogins =  user.wrongLoginAttemptCount ? user.wrongLoginAttemptCount : 0;
 
-                if(user.wrongLoginAttemptCount && user.wrongLoginAttemptCount > env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
+                if(countWrongAttemptsLogins > process.env.WRONG_LOGIN_ATTEMPT_MAX_COUNT){
                     // Disable the current user because too many wrong attempts logins
                     await Auth.setUserLoginTooManyWrongAttempts(user.userId, true, countWrongAttemptsLogins, currentTicket);
 

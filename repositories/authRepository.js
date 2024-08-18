@@ -101,14 +101,14 @@ async function setUserLoginSuccessfully(userId, method, ticket) {
   let successfully = true; 
 
   try {    
-    await Auth.update(
+    await data.update(
       {
         lastLoginAttemptDate: new Date().getDate(),
         wrongLoginAttemptCount:0
       },
       {
         where:{
-            userId: user.userId
+            userId: userId
         }
       },
       transaction
@@ -136,13 +136,13 @@ async function setUserLoginTooManyWrongAttempts(userId, setInvalidUser, currentW
 
   try {    
     if(setInvalidUser){
-      await Auth.update(
+      await data.update(
         {
           enabled: false
         },
         {
           where:{
-            userId: user.userId
+            userId: userId
           }
         },
         transaction
@@ -150,13 +150,13 @@ async function setUserLoginTooManyWrongAttempts(userId, setInvalidUser, currentW
     }   
     else
     {
-      await Auth.update(
+      await data.update(
         {
           wrongLoginAttemptCount: currentTentative
         },
         {
           where:{
-            userId: user.userId
+            userId: userId
           }
         },
         transaction
@@ -320,6 +320,8 @@ class Procs extends idb{
 module.exports = {
   resetPassword,
   createUser,
+  setUserLoginTooManyWrongAttempts,
+  setUserLoginSuccessfully,
   data,
   Procs,
   MAX_FIRSTNAME_LENGTH,
