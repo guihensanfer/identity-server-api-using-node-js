@@ -25,7 +25,7 @@ const util = require('../../services/utilService');
  *           schema:
  *             type: object
  *             properties:
- *                 statusCode:
+ *               statusCode:
  *                   type: integer
  *                   description: Response status code
  *               email:

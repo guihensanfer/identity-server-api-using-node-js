@@ -1204,7 +1204,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
  *           schema:
  *             type: object
  *             properties:
- *                 statusCode:
+ *               statusCode:
  *                   type: integer
  *                   description: Response status code
  *               email:

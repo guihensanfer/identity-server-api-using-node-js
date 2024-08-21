@@ -13,6 +13,26 @@ const path = require('path');
 const cors = require('cors');
 const encript = require('./services/passwordEncryptService');
 const rateLimit = require('express-rate-limit');
+// const fs = require('fs');
+// const pipeName = '\\\\.\\pipe\\SECURITY_GUILHERME_ENV';
+
+// console.log('Tentando conectar ao pipe...');
+
+// let envConfigSecurity = null; 
+
+// const net = require('net');
+
+// fs.open(pipeName, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => {
+//   // Handle err
+//   const pipe = new net.Socket({ fd });
+//   // Now `pipe` is a stream that can be used for reading from the FIFO.
+//   pipe.on('data', (data) => {
+//     // process data ...
+//     console.log('result data', data);
+//   });
+// });
+
+// console.log('result',envConfigSecurity);
 
 const swaggerOptions = {
     definition: {
