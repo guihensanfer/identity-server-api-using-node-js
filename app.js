@@ -13,26 +13,44 @@ const path = require('path');
 const cors = require('cors');
 const encript = require('./services/passwordEncryptService');
 const rateLimit = require('express-rate-limit');
-// const fs = require('fs');
-// const pipeName = '\\\\.\\pipe\\SECURITY_GUILHERME_ENV';
+const fs = require('fs');
+const net = require('net');
 
-// console.log('Tentando conectar ao pipe...');
+let envConfigSecurity = null;
 
-// let envConfigSecurity = null; 
+const pipeName = '\\\\.\\pipe\\SECURITY_GUILHERME_ENV';
 
-// const net = require('net');
+fs.open(pipeName, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => {
+  if (err) {
+    console.error('Erro ao abrir o pipe:', err.message);
+    return;
+  }
 
-// fs.open(pipeName, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => {
-//   // Handle err
-//   const pipe = new net.Socket({ fd });
-//   // Now `pipe` is a stream that can be used for reading from the FIFO.
-//   pipe.on('data', (data) => {
-//     // process data ...
-//     console.log('result data', data);
-//   });
-// });
+  const pipe = new net.Socket({ fd });
 
-// console.log('result',envConfigSecurity);
+  // Listener para os dados recebidos
+  pipe.on('data', (data) => {
+    try {
+      // Converte os bytes para string
+      const jsonString = data.toString('utf-8');
+      console.log('Dados recebidos como string:', jsonString);
+
+      // Converte a string para JSON
+      envConfigSecurity = JSON.parse(jsonString);
+      console.log('Configuração carregada como JSON:', envConfigSecurity);
+
+      // Processa o JSON como necessário
+    } catch (error) {
+      console.error('Erro ao converter dados para JSON:', error.message);
+    }
+  });
+
+  // Listener para o fim da transmissão de dados
+  pipe.on('end', () => {
+    console.log('Conexão com o pipe encerrada.');
+    pipe.destroy();
+  });
+});
 
 const swaggerOptions = {
     definition: {
