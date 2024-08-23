@@ -324,6 +324,37 @@ loadEnvFromPipe(pipeName).then(() => {
         .catch(ex => {
             console.log('exception: ' + ex)
         });
+
+        // Update all AESEncrypt empty column
+        const emptyUsersIdsAES = await Users.data.findAll({
+            where:{
+                [Op.or]:[
+                    {
+                        encryptionAESKey: null
+                    },
+                    {
+                        encryptionAESKey:''
+                    },
+                    {
+                        encryptionAESIV: null
+                    },
+                    {
+                        encryptionAESIV:''
+                    }
+                ]
+            },
+            attributes: ['userId']
+        });
+
+        // terminar essa logica
+        // await data.update(
+        //     userData, 
+        //     {
+        //       where:{
+        //         userId: userId
+        //       }
+        //     }
+        //   );
         
     })();    
 });
