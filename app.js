@@ -18,11 +18,11 @@ const net = require('net');
 
 let envConfigSecurity = null;
 
-const pipeName = '\\\\.\\pipe\\SECURITY_GUILHERME_ENV';
+const pipeName = process.env.BOMDEV_RUNTIME_MANAGEMENT_SECRET;
 
 fs.open(pipeName, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => {
   if (err) {
-    console.error('Erro ao abrir o pipe:', err.message);
+    console.error('Error to read pipe:', err.message);
     return;
   }
 
@@ -32,22 +32,19 @@ fs.open(pipeName, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK, (err, fd) => 
   pipe.on('data', (data) => {
     try {
       // Converte os bytes para string
-      const jsonString = data.toString('utf-8');
-      console.log('Dados recebidos como string:', jsonString);
+      const jsonString = data.toString('utf-8');      
 
       // Converte a string para JSON
-      envConfigSecurity = JSON.parse(jsonString);
-      console.log('Configuração carregada como JSON:', envConfigSecurity);
+      envConfigSecurity = JSON.parse(jsonString);      
 
-      // Processa o JSON como necessário
+      console.log('Bomdev Runtime Management Secret is active.')
     } catch (error) {
-      console.error('Erro ao converter dados para JSON:', error.message);
+      console.error('Error to load pipe data:', error.message);
     }
   });
 
   // Listener para o fim da transmissão de dados
-  pipe.on('end', () => {
-    console.log('Conexão com o pipe encerrada.');
+  pipe.on('end', () => {    
     pipe.destroy();
   });
 });
