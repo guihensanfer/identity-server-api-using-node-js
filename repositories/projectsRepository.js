@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
 const idb = require('../interfaces/idb');
+const MAX_ENCRYPTION_KEY_LENGTH = 100;
 
 const data = db._sequealize.define('Projects', {
     projectId:{
@@ -24,8 +25,25 @@ const data = db._sequealize.define('Projects', {
     passwordStrengthRegex:{
         type: Sequelize.STRING(200),
         allowNull:true        
+    },
+    encryptionAESKey:{
+      type:Sequelize.STRING(MAX_ENCRYPTION_KEY_LENGTH),
+      allowNull:true
+    },
+    encryptionAESIV:{
+      type:Sequelize.STRING(MAX_ENCRYPTION_KEY_LENGTH),
+      allowNull:true
     }
 });
+
+async function getProjectAESEncryptCredentials(projectId){
+    return {encryptionAESKey, encryptionAESIV} = await data.findOne({
+        where:{
+            projectId: projectId
+        },
+        attributes: ['encryptionAESKey', 'encryptionAESIV']
+    });
+}
 
 class Procs extends idb{
     constructor(ticket){
@@ -36,5 +54,6 @@ class Procs extends idb{
 
 module.exports = {
     data,
+    getProjectAESEncryptCredentials,
     Procs
 };

@@ -63,6 +63,8 @@ loadEnvFromPipe(pipeName).then(() => {
     const cors = require('cors');
     const encript = require('./services/passwordEncryptService');
     const rateLimit = require('express-rate-limit');
+    const AESEncrypt = require('./services/AESEncryptService');
+    const {Op} = require('sequelize');
 
     const swaggerOptions = {
         definition: {
@@ -182,7 +184,7 @@ loadEnvFromPipe(pipeName).then(() => {
         const Users = require('./repositories/authRepository');    
         const Roles = require('./repositories/rolesRepository');
         const UsersRoles = require('./repositories/usersRolesRepository');
-        const UsersOAuth = require('./repositories/oAuthRepository');
+        const UsersOAuth = require('./repositories/oAuthRepository');        
     
         await db._sequealize.sync();            
     
@@ -295,7 +297,53 @@ loadEnvFromPipe(pipeName).then(() => {
                 console.log('Initial administrators were created')            
             }
         }
+
+         // Update all AESEncrypt empty column
+         const emptyUsersIdsAES = await Projects.data.findAll({
+            where:{
+                [Op.or]:[
+                    {
+                        encryptionAESKey: null
+                    },
+                    {
+                        encryptionAESKey:''
+                    },
+                    {
+                        encryptionAESIV: null
+                    },
+                    {
+                        encryptionAESIV:''
+                    }
+                ]
+            },
+            attributes: ['projectId']
+        });
+                
+        for (const project of emptyUsersIdsAES) {
+            const _projectId = project.projectId;
+            const { key, iv } = AESEncrypt.generateAESKeyAndIV();
+
+            await Projects.data.update(
+                {
+                    encryptionAESKey: key,
+                    encryptionAESIV: iv
+                },
+                {
+                    where: {
+                        projectId: _projectId
+                    }
+                }
+            );
+        }
+
+        const encrypt = new AESEncrypt('d0bda0f10eb503b8f8aad5b741230b01b46bbc246858de40a6e0f516515c9d58', '9f2d3b52e6913abf76d1a81595ea7050');
+        const encryptedData = encrypt.encrypt('teste guilherme');
+        console.log('encrypted', encryptedData);
+        const descryptedData = encrypt.decrypt(encryptedData);
+        console.log('descrypted', descryptedData);
+        // end encrypt
     
+        // tests
         await db.executeProcedure('USP_TEST')
         .then(res => {
     
@@ -324,37 +372,6 @@ loadEnvFromPipe(pipeName).then(() => {
         .catch(ex => {
             console.log('exception: ' + ex)
         });
-
-        // Update all AESEncrypt empty column
-        const emptyUsersIdsAES = await Users.data.findAll({
-            where:{
-                [Op.or]:[
-                    {
-                        encryptionAESKey: null
-                    },
-                    {
-                        encryptionAESKey:''
-                    },
-                    {
-                        encryptionAESIV: null
-                    },
-                    {
-                        encryptionAESIV:''
-                    }
-                ]
-            },
-            attributes: ['userId']
-        });
-
-        // terminar essa logica
-        // await data.update(
-        //     userData, 
-        //     {
-        //       where:{
-        //         userId: userId
-        //       }
-        //     }
-        //   );
-        
+       
     })();    
 });

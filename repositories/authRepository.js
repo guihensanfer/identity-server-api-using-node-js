@@ -8,7 +8,6 @@ const MAX_GUID_LENGTH = 40;
 const MAX_DOCUMENT_LENGTH = 50;
 const MAX_LANGUAGE_LENGTH = 50;
 const MAX_PICTURE_LENGTH = 200;
-const MAX_ENCRYPTION_KEY_LENGTH = 33;
 const idb = require('../interfaces/idb');
 const httpP = require('../models/httpResponsePatternModel');
 const UsersRoles = require('../repositories/usersRolesRepository');
@@ -81,15 +80,7 @@ const data = db._sequealize.define('Users', {
   wrongLoginAttemptCount: {
     type: Sequelize.SMALLINT,
     allowNull: true,
-  },
-  encryptionAESKey:{
-    type:Sequelize.STRING(MAX_ENCRYPTION_KEY_LENGTH),
-    allowNull:true
-  },
-  encryptionAESIV:{
-    type:Sequelize.STRING(MAX_ENCRYPTION_KEY_LENGTH),
-    allowNull:true
-  },
+  }
 }, {
   indexes: [
       {

@@ -16,6 +16,14 @@ function extractNumbers(value) {
   return numbersOnly; // Return only the numbers
 }
 
+function hexStringToBytes(hex) {
+  const bytes = [];
+  for (let i = 0; i < hex.length; i += 2) {
+      bytes.push(parseInt(hex.substr(i, 2), 16));
+  }
+  return Buffer.from(bytes);
+}
+
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -71,5 +79,6 @@ module.exports = {
     formatJSON,
     isValidEmail,
     extractNumbers,
-    isValidURI
+    isValidURI,
+    hexStringToBytes
 }

@@ -16,6 +16,7 @@ const httpP = require('../../models/httpResponsePatternModel');
 const axios = require('axios');
 const url = require('url');
 const passwordEncryptService = require('../../services/passwordEncryptService');
+const AESEncrypt = require('../../services/AESEncryptService');
 const googleAuthRedirectUrl = process.env.APP_HOST + 'api/v1/auth/login/external/google/callback';
 
 /**
@@ -242,7 +243,7 @@ router.post('/register', httpP.HTTPResponsePatternModel.authWithAdminGroup(), as
  *                 maxLength: 200
  *               projectId:
  *                 type: integer
- *               password:
+ *               passwordEncrypted:
  *                 type: string
  *                 maxLength: 300
  *               continueWithCode:
@@ -320,7 +321,7 @@ router.post('/login', async (req, res) => {
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();      
     const currentTicket = response.getTicket(); 
     var { 
-        email, password, projectId, continueWithCode, codePassword
+        email, passwordEncrypted, projectId, continueWithCode, codePassword
     } = req.body;        
     let errors = [];
     const rolesProcs = new Roles.Procs(currentTicket);
@@ -348,11 +349,11 @@ router.post('/login', async (req, res) => {
             }    
 
             // Password
-            if(_.isNull(password) || _.isEmpty(password)){
-                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('password'));
+            if(_.isNull(passwordEncrypted) || _.isEmpty(passwordEncrypted)){
+                errors.push(httpP.HTTPResponsePatternModel.requiredMsg('passwordEncrypted'));
             }
-            else if(password.length > Auth.MAX_PASSWORD_LENGTH){
-                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('password'));
+            else if(passwordEncrypted.length > Auth.MAX_PASSWORD_LENGTH){
+                errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('passwordEncrypted'));
             }  
 
             // ProjectId
@@ -373,7 +374,7 @@ router.post('/login', async (req, res) => {
         }
         else
         {
-            if(email || password || projectId){
+            if(email || passwordEncrypted || projectId){
                 response.set(400, false, null, null, "Send only token without including any additional attributes (remove 'continueWithCode', 'codePassword' from your request).");
                 return await response.sendResponse();
             }
@@ -483,7 +484,12 @@ router.post('/login', async (req, res) => {
             response.set(401, false, ["Email is not confirmed"], null, "Email is not confirmed, use the log in from two steps authentication.");
             return await response.sendResponse();
         }
-        else if(byPassword) {            
+        else if(byPassword) {    
+            const {encryptionAESKey, encryptionAESIV} = await Projects.getProjectAESEncryptCredentials(projectId);
+            // Instance the AesClass
+            const encrypt = new AESEncrypt(encryptionAESKey, encryptionAESIV);
+            const password = encrypt.decrypt(passwordEncrypted);                    
+
             const checkPassword = await passwordEncryptService.comparePassword(password, user.password);
             
             if(!checkPassword){
@@ -519,8 +525,8 @@ router.post('/login', async (req, res) => {
 
         const roleNames = await rolesProcs.getRoleArrayNamesByIds(roleIds);    
 
-        let secret = process.env.SECRET;        
-        let token = jwt.sign({            
+        const secret = process.env.SECRET;        
+        const token = jwt.sign({            
             id: user.userId,
             userEmail: user.email,
             userName: user.firstName,
@@ -541,7 +547,7 @@ router.post('/login', async (req, res) => {
         // For refresh log in, without request news with the confidential infos
         const refresh = await authProcs.userTokenCreate(user.userId, refreshExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.REFRESH_TOKEN);
         // Used on OAuth callback context, so that the client app can see the user info to show into their app.
-        const codeForUserInfo = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OAUTH_USER_INFO, user.userId);
+        const codeForUserInfo = await authProcs.userTokenCreate(user.userId, accessExpiresAt, req.ip, httpP.HTTPResponsePatternModel.ProcessCodes.OAUTH_USER_INFO, user.userId);                
 
         const result = {
             accessToken: token,
@@ -557,7 +563,7 @@ router.post('/login', async (req, res) => {
             user.userId, 
             byPassword ? 'byPassword' : 'other',
             currentTicket
-        );
+        );                        
 
         response.set(200, true, null, result);
         return await response.sendResponse();
@@ -1072,12 +1078,13 @@ router.post('/forget-password', httpP.HTTPResponsePatternModel.authWithAdminGrou
  *             properties:
  *               code:
  *                 type: string
- *               newPassword:
+ *               newPasswordEncrypted:
  *                 type: string
  *                 maxLength: 300
+ *                 description: Pass the encrypted password. Use your AES credentials to do it.
  *         required:
  *          - token
- *          - newPassword
+ *          - newPasswordEncrypted
  *     security:
  *       - JWT: []
  *     responses:
@@ -1123,7 +1130,7 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
     let response = await new httpP.HTTPResponsePatternModel(req,res).useLogs();     
     let currentTicket = response.getTicket(); 
     var { 
-        code, newPassword
+        code, newPasswordEncrypted
     } = req.body;        
     let errors = [];    
     const authProcs = new Auth.Procs(currentTicket);    
@@ -1143,11 +1150,11 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
        
         
          // newPassword
-         if(_.isNull(newPassword) || _.isEmpty(newPassword)){
-            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('newPassword'));            
+         if(_.isNull(newPasswordEncrypted) || _.isEmpty(newPasswordEncrypted)){
+            errors.push(httpP.HTTPResponsePatternModel.requiredMsg('newPasswordEncrypted'));            
         }
-        else if(newPassword.length > Auth.MAX_PASSWORD_LENGTH){
-            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('newPassword'));               
+        else if(newPasswordEncrypted.length > Auth.MAX_PASSWORD_LENGTH){
+            errors.push(httpP.HTTPResponsePatternModel.lengthExceedsMsg('newPasswordEncrypted'));               
         }        
        
 
@@ -1165,9 +1172,21 @@ router.put('/reset-password', httpP.HTTPResponsePatternModel.authWithAdminGroup(
             response.set(401, false);
             return await response.sendResponse();
         }         
+        
+        // Encypt the project encrypt credencials
+        const {encryptionAESKey, encryptionAESIV} = await Projects.getProjectAESEncryptCredentials(req.user.projectId);
+        // Instance the AesClass
+        const encrypt = new AESEncrypt(encryptionAESKey, encryptionAESIV);
+        const newPassword = encrypt.decrypt(newPasswordEncrypted);
+
+        if(_.isNull(newPassword)){
+            response.set(401, false, null, null, "Invalid encrypted password.");
+
+            return await response.sendResponse();
+        }         
 
         // Create password
-        const passwordHash = await passwordEncryptService.encryptPassword(newPassword);
+        const passwordHash = await passwordEncryptService.encryptPassword(newPassword);        
 
         // Update the password
         await Auth.resetPassword(_userID, passwordHash, currentTicket);
