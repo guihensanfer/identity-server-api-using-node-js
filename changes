@@ -1,6 +1,8 @@
-* generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
+
 
 _________________________
+
+* OKDONE generate keys to cripty the tokens and codes info, every client app need to know about your own cript secret key
 
 OK DONE *** security -> check if the loginWithCode is the refresh or otp token, because can the bad user try to login with a different token
     * do it for all endpoints, maybe we needs an enum to map all possibilities
